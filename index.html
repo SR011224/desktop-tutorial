@@ -1,0 +1,1317 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>:root{padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}body{margin:0}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Dojo de Cierres</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Mono:wght@400;500;600&family=Instrument+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: talonario de pedidos. Franja superior, hoja que se desplaza y barra de pestañas
+   (riel lateral en escritorio). Cada lección es un renglón del pedido que recibe su sello. */
+:root{
+  --paper:#eef1f8; --sheet:#ffffff; --sheet-2:#f5f7fc; --ink:#131b33; --ink-2:#4d587a; --line:#cfd6e8;
+  --pen:#2347d9; --pen-2:#1a36a8; --on-pen:#ffffff; --pen-wash:#e3e9fd;
+  --canary:#ffd84d; --on-canary:#33270a; --canary-wash:#fff5c9;
+  --ok:#127a48; --ok-wash:#dcf3e6; --bad:#b3261e; --bad-wash:#fde5e2;
+  --stamp:#c4302b; --on-stamp:#ffffff;
+  --f-display:"Bricolage Grotesque","Arial Narrow",system-ui,sans-serif;
+  --f-body:"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --paper:#0d1222; --sheet:#161d33; --sheet-2:#1c2440; --ink:#e8ecf8; --ink-2:#a5afcb; --line:#2c3657;
+  --pen:#8fa6ff; --pen-2:#5f78d8; --on-pen:#0d1222; --pen-wash:#1f2a52;
+  --canary:#ffd84d; --on-canary:#33270a; --canary-wash:#3a3212;
+  --ok:#62d39c; --ok-wash:#12331f; --bad:#ff8f85; --bad-wash:#3a1512;
+  --stamp:#ff7b6b; --on-stamp:#2a0b08; color-scheme:dark } }
+:root[data-theme="dark"]{
+  --paper:#0d1222; --sheet:#161d33; --sheet-2:#1c2440; --ink:#e8ecf8; --ink-2:#a5afcb; --line:#2c3657;
+  --pen:#8fa6ff; --pen-2:#5f78d8; --on-pen:#0d1222; --pen-wash:#1f2a52;
+  --canary:#ffd84d; --on-canary:#33270a; --canary-wash:#3a3212;
+  --ok:#62d39c; --ok-wash:#12331f; --bad:#ff8f85; --bad-wash:#3a1512;
+  --stamp:#ff7b6b; --on-stamp:#2a0b08; color-scheme:dark }
+
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button,input,textarea,select{font:inherit;color:inherit}
+button{-webkit-tap-highlight-color:transparent}
+h1,h2,h3{font-family:var(--f-display);line-height:1.12;margin:0;text-wrap:balance;letter-spacing:-.01em}
+h1{font-size:1.6rem;font-weight:800} h2{font-size:1.3rem;font-weight:700} h3{font-size:1.05rem;font-weight:700}
+p,ol,ul,blockquote{margin:0} ol,ul{padding-left:1.25em;display:grid;gap:6px}
+:focus-visible{outline:3px solid var(--pen);outline-offset:2px;border-radius:6px}
+.gut{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.label{font-family:var(--f-mono);font-size:.7rem;font-weight:500;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-2)}
+.muted{color:var(--ink-2)} .small{font-size:.88rem}
+
+/* shell */
+.app{position:relative;height:100%;display:grid;grid-template-rows:auto minmax(0,1fr) auto;grid-template-columns:minmax(0,1fr)}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:10px;border-bottom:1px solid var(--line);background:var(--sheet)}
+.brand{font-family:var(--f-display);font-weight:800;font-size:1.12rem;white-space:nowrap}
+.brand i{font-style:normal;color:var(--pen)}
+.stats{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:2px 14px;font-family:var(--f-mono);font-size:.74rem;color:var(--ink-2);font-variant-numeric:tabular-nums;white-space:nowrap}
+.stats b{color:var(--ink);font-weight:600}
+#view{overflow-y:auto;overscroll-behavior:contain;padding-block:20px 36px}
+#view.chatmode{overflow:hidden;padding-block:0}
+.wrap{max-width:720px;margin-inline:auto;display:flex;flex-direction:column;gap:20px;min-width:0}
+.tabs{display:flex;border-top:1px solid var(--line);background:var(--sheet);padding-left:max(4px,env(safe-area-inset-left,0px));padding-right:max(4px,env(safe-area-inset-right,0px))}
+.tab{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 2px 9px;border:0;border-top:3px solid transparent;margin-top:-1px;background:none;font-size:.68rem;font-weight:600;color:var(--ink-2);cursor:pointer}
+.tab svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.tab[aria-current="page"]{color:var(--pen);border-top-color:var(--pen)}
+@media (min-width:880px){
+  .app{grid-template-columns:204px minmax(0,1fr);grid-template-rows:auto minmax(0,1fr)}
+  .top{grid-column:1/-1}
+  .tabs{grid-row:2;grid-column:1;flex-direction:column;justify-content:flex-start;gap:4px;border-top:0;border-right:1px solid var(--line);padding:16px 10px 16px max(10px,env(safe-area-inset-left,0px))}
+  .tab{flex:none;flex-direction:row;justify-content:flex-start;gap:10px;font-size:.92rem;padding:10px 12px;border-top:0;margin:0;border-radius:8px}
+  .tab[aria-current="page"]{background:var(--pen-wash)}
+  #view{grid-row:2;grid-column:2}
+}
+
+/* controls */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:10px 18px;border-radius:var(--r);border:1.5px solid var(--line);background:var(--sheet);font-weight:700;cursor:pointer;text-align:center}
+.btn.pen{background:var(--pen);border-color:var(--pen);color:var(--on-pen);box-shadow:0 3px 0 var(--pen-2)}
+.btn.pen:active{transform:translateY(2px);box-shadow:0 1px 0 var(--pen-2)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.sm{min-height:36px;padding:6px 12px;font-size:.86rem;font-weight:600}
+.btn.wide{width:100%}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{padding:8px 14px;border-radius:99px;border:1.5px solid var(--line);background:var(--sheet);font-weight:600;font-size:.9rem;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.inp{width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:var(--r);background:var(--sheet)}
+textarea.inp{resize:none;min-height:52px;display:block}
+.field{display:grid;gap:6px;min-width:0}
+.sheet{background:var(--sheet);border:1px solid var(--line);border-radius:14px;padding:18px;display:grid;gap:16px;min-width:0}
+.note{font-size:.86rem;color:var(--ink-2);border-left:0;background:var(--sheet-2);padding:10px 12px;border-radius:8px}
+.if-ai-off{display:none} body[data-ai="off"] .if-ai-off{display:block}
+body[data-ai="off"] .if-ai-on{display:none}
+.say-btn{border:0;background:none;color:var(--pen);font-weight:600;font-size:.84rem;cursor:pointer;padding:2px 4px;white-space:nowrap}
+
+/* ruta */
+.today{background:var(--canary);color:var(--on-canary);border-radius:14px;padding:18px;display:grid;gap:14px}
+.today .label{color:var(--on-canary);opacity:.75}
+.today .btn{background:var(--on-canary);border-color:var(--on-canary);color:var(--canary)}
+.meter{display:grid;gap:6px;font-family:var(--f-mono);font-size:.76rem}
+.meter .bar{background:rgba(51,39,10,.2)} .meter .bar i{background:var(--on-canary)}
+.bar{flex:1;height:10px;border-radius:99px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--pen);border-radius:99px;transition:width .3s}
+.unit{background:var(--sheet);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.unit>header{padding:16px 16px 14px;display:grid;gap:4px;border-bottom:1.5px dashed var(--line)}
+.unit>header .hrow{display:flex;justify-content:space-between;gap:12px;align-items:baseline}
+.lines{list-style:none;margin:0;padding:0;display:block}
+.line+.line{border-top:1px solid var(--line)}
+.line button{width:100%;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:12px;padding:12px 16px;background:none;border:0;text-align:left;cursor:pointer}
+.no{font-family:var(--f-mono);font-size:.78rem;color:var(--ink-2);min-width:2ch}
+.ti b{display:block;font-weight:700} .ti small{color:var(--ink-2);font-size:.8rem}
+.line.next button{background:var(--canary-wash)}
+.line.locked .ti b{font-weight:500;color:var(--ink-2)}
+.end{display:flex;align-items:center;gap:10px}
+.pips{display:flex;gap:3px}
+.pip{width:8px;height:8px;border-radius:2px;border:1.5px solid var(--ink-2)}
+.pip.on{background:var(--stamp);border-color:var(--stamp)}
+.stamp{display:inline-block;font-family:var(--f-mono);text-transform:uppercase;font-weight:600;letter-spacing:.08em;font-size:.66rem;color:var(--stamp);border:2px solid var(--stamp);border-radius:4px;padding:1px 6px;transform:rotate(-5deg)}
+.stamp.big{font-size:1.5rem;padding:6px 16px;border-width:4px;border-radius:8px}
+.go{font-weight:700;color:var(--pen);font-size:.88rem}
+.lock{width:16px;height:16px;fill:none;stroke:var(--ink-2);stroke-width:1.8}
+
+/* player */
+.player{position:absolute;inset:0;z-index:5;background:var(--paper);display:grid;grid-template-rows:auto minmax(0,1fr) auto}
+.p-head{display:flex;align-items:center;gap:12px;padding-block:12px}
+.x{border:0;background:none;font-size:1.5rem;line-height:1;cursor:pointer;color:var(--ink-2);padding:4px 8px}
+.p-body{overflow-y:auto;padding-block:8px 28px}
+.p-foot{padding-block:12px;border-top:1px solid var(--line);background:var(--sheet)}
+.p-foot .wrap{gap:10px}
+.lead{font-size:1.06rem}
+.q{font-size:1.25rem}
+blockquote.say{border:1px solid var(--line);background:var(--sheet);border-radius:var(--r);padding:12px 14px;font-weight:500;display:flex;gap:8px;justify-content:space-between;align-items:flex-start}
+.warn{background:var(--bad-wash);border-radius:var(--r);padding:12px 14px}
+.warn .label{color:var(--bad)}
+.opts{display:grid;gap:10px}
+.opt{text-align:left;padding:14px 16px;border:1.5px solid var(--line);border-bottom-width:3px;border-radius:var(--r);background:var(--sheet);cursor:pointer;font-weight:500}
+.opt[aria-pressed="true"]{border-color:var(--pen);background:var(--pen-wash)}
+.opt.right{border-color:var(--ok);background:var(--ok-wash)}
+.opt.wrong{border-color:var(--bad);background:var(--bad-wash)}
+.sigline{min-height:60px;border-bottom:2px solid var(--ink);display:flex;flex-wrap:wrap;gap:8px;padding:8px 0 10px;align-items:flex-end}
+.sigline::before{content:"✕";font-family:var(--f-mono);color:var(--ink-2);align-self:flex-end;padding-bottom:6px}
+.bank{display:flex;flex-wrap:wrap;gap:8px}
+.word{padding:8px 12px;border:1.5px solid var(--line);border-bottom-width:3px;border-radius:8px;background:var(--sheet);cursor:pointer;font-weight:500}
+.word:disabled{opacity:.25;cursor:default}
+.fb{border-radius:var(--r);padding:14px 16px;display:grid;gap:8px}
+.fb.ok{background:var(--ok-wash)} .fb.bad{background:var(--bad-wash)}
+.fb .t{font-family:var(--f-display);font-weight:700;font-size:1.05rem}
+.fb.ok .t{color:var(--ok)} .fb.bad .t{color:var(--bad)}
+.done{display:grid;gap:18px;justify-items:center;text-align:center;padding-block:28px}
+@media (prefers-reduced-motion:no-preference){ .stamp.big{animation:stampin .35s cubic-bezier(.2,1.6,.4,1) both} }
+@keyframes stampin{from{transform:rotate(-5deg) scale(2.2);opacity:0}to{transform:rotate(-5deg) scale(1);opacity:1}}
+
+/* chat */
+.chat{height:100%;display:grid;grid-template-rows:auto minmax(0,1fr) auto}
+.c-head{padding-block:10px;border-bottom:1px solid var(--line);background:var(--sheet)}
+.c-head .wrap{flex-direction:row;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.msgs{overflow-y:auto;padding-block:16px}
+.msgs .wrap{gap:10px}
+.bub{max-width:86%;padding:10px 14px;border-radius:14px;white-space:pre-wrap;overflow-wrap:anywhere}
+.bub.c{background:var(--sheet);border:1px solid var(--line);align-self:flex-start;border-bottom-left-radius:4px}
+.bub.v{background:var(--pen);color:var(--on-pen);align-self:flex-end;border-bottom-right-radius:4px}
+.bub.sys{align-self:center;background:var(--canary-wash);font-size:.9rem;text-align:center;max-width:100%}
+.bub .who{display:block;font-family:var(--f-mono);font-size:.64rem;letter-spacing:.08em;text-transform:uppercase;opacity:.7}
+.c-foot{padding-block:10px;border-top:1px solid var(--line);background:var(--sheet)}
+.c-foot .wrap{gap:6px}
+.composer{display:flex;gap:8px;align-items:flex-end}
+.composer .inp{flex:1;min-width:0}
+.mic,.send{flex:none;width:48px;height:48px;border-radius:50%;border:1.5px solid var(--line);background:var(--sheet);cursor:pointer;display:grid;place-items:center}
+.mic svg,.send svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.send{background:var(--pen);border-color:var(--pen);color:var(--on-pen)}
+body:not([data-mic]) .mic{display:none}
+body[data-listening] .mic{background:var(--stamp);border-color:var(--stamp);color:var(--on-stamp)}
+.partial{min-height:1.2em;font-size:.86rem;color:var(--ink-2);font-style:italic}
+.no-mic{display:none;font-size:.82rem;color:var(--ink-2)} body:not([data-mic]) .no-mic{display:block}
+
+/* evaluación y guía */
+.score{font-family:var(--f-display);font-size:4rem;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+.score small{font-size:1.2rem;color:var(--ink-2);font-weight:600}
+.tech{display:flex;flex-wrap:wrap;gap:8px}
+.tag{font-size:.82rem;font-weight:600;padding:4px 10px;border-radius:99px;border:1.5px solid var(--line)}
+.tag.ok{border-color:var(--ok);color:var(--ok)} .tag.bad{border-color:var(--bad);color:var(--bad)}
+details.acc{background:var(--sheet);border:1px solid var(--line);border-radius:12px}
+details.acc>summary{cursor:pointer;padding:14px 16px;font-weight:700;list-style:none;display:flex;justify-content:space-between;gap:10px;align-items:center}
+details.acc>summary::-webkit-details-marker{display:none}
+details.acc>summary>span{min-width:0}
+details.acc>summary .label{margin-left:6px;white-space:nowrap}
+details.acc>summary::after{content:"+";font-family:var(--f-mono);color:var(--ink-2)}
+details.acc[open]>summary::after{content:"–"}
+details.acc>.in{padding:0 16px 16px;display:grid;gap:12px}
+.kv{display:grid;gap:10px}
+.nums{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.num{border:1px solid var(--line);border-radius:var(--r);padding:10px;display:grid;gap:6px;justify-items:center;text-align:center}
+.num .label{font-size:.56rem;letter-spacing:.03em}
+.num b{font-family:var(--f-display);font-size:1.8rem;font-variant-numeric:tabular-nums;line-height:1}
+.num .row{gap:6px;justify-content:center}
+.pm{width:36px;height:36px;border-radius:50%;border:1.5px solid var(--line);background:var(--sheet);cursor:pointer;font-weight:700}
+.tblwrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;font-size:.9rem}
+th,td{padding:6px 8px;text-align:right;border-bottom:1px solid var(--line)} th:first-child,td:first-child{text-align:left}
+th{font-family:var(--f-mono);font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);font-weight:500}
+.toast{position:absolute;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:9;background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:99px;font-size:.9rem;font-weight:600;max-width:min(92%,480px);text-align:center}
+
+</style>
+<div class="app" id="app">
+  <header class="top gut">
+    <div class="brand">Dojo de <i>Cierres</i></div>
+    <div class="stats" id="stats" aria-label="Tu progreso"></div>
+  </header>
+  <main id="view" class="gut"></main>
+  <nav class="tabs" aria-label="Secciones">
+    <button class="tab" data-act="go" data-v="ruta"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2"/></svg>Ruta</button>
+    <button class="tab" data-act="go" data-v="simulador"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h11v8H9l-3 3v-3H4zM15 9h5v8h-2v3l-3-3h-4"/></svg>Simulador</button>
+    <button class="tab" data-act="go" data-v="objeciones"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.2 7.6-8 9-4.8-1.4-8-4.5-8-9V6zM12 8v5M12 16.5v.01"/></svg>Objeciones</button>
+    <button class="tab" data-act="go" data-v="coach"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.700M12 16.8v.01"/></svg>Coach</button>
+    <button class="tab" data-act="go" data-v="guia"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h9a4 4 0 0 1 4 4v12H8a3 3 0 0 1-3-3zM5 17a3 3 0 0 1 3-3h10"/></svg>Guía</button>
+  </nav>
+  <div class="player" id="player" hidden></div>
+  <div class="toast" id="toast" role="status" hidden></div>
+</div>
+<script>
+/* Contenido del curso. Redacción propia de la app, basada en los métodos de
+   Brian Tracy (psicología de ventas) y Alex Dey (cierres, tipos de cliente, referidos, agenda).
+   k: base | prueba | maestro | tracy | obj | post.  mc: [pregunta, [opciones], índice correcto, explicación] */
+window.DOJO = {
+UNITS: [
+  { t: "Cabeza de cerrador", d: "Antes de aprender frases, arregla lo que pasa en tu cabeza cuando vas a pedir la venta.", src: "Brian Tracy" },
+  { t: "Lee a tu cliente", d: "Cuatro tipos de persona, cuatro formas de comprar. Reconócelos en el primer minuto.", src: "Alex Dey" },
+  { t: "Cierres de prueba", d: "Preguntas pequeñas que juntan síes y te dicen qué tan cerca estás.", src: "Alex Dey" },
+  { t: "Cierres maestros", d: "El momento de pedir la decisión, con cinco formas distintas de hacerlo.", src: "Alex Dey" },
+  { t: "Cierres de Brian Tracy", d: "Cinco cierres suaves y profesionales para rematar la presentación.", src: "Brian Tracy" },
+  { t: "Objeciones", d: "Qué responder cuando el cliente dice justo lo que no querías oír.", src: "Tracy y Dey" },
+  { t: "Después del sí", d: "Referidos y medición: lo que convierte una venta en una carrera.", src: "Alex Dey" }
+],
+LESSONS: [
+/* ───────── U1 · Brian Tracy ───────── */
+{ id: "autoconcepto", u: 0, n: "Vendes como te ves", src: "Brian Tracy", k: "base",
+  idea: "Brian Tracy sostiene que tus ventas nunca superan por mucho tiempo la imagen que tienes de ti como vendedor. Si por dentro te ves como alguien que molesta, vas a evitar pedir la venta. El cierre empieza en tu cabeza antes que en tu boca.",
+  cuando: "Todos los días, antes de la primera cita.",
+  f: ["Háblate en positivo antes de cada cita: «Me gusto. Me encanta mi trabajo».", "Decide cuánto quieres ganar y actúa como alguien que ya gana eso.", "Mírate como asesor que ayuda a decidir, no como alguien que pide un favor."],
+  fr: ["Mi trabajo es ayudar a esta persona a tomar una buena decisión."],
+  err: "Creer que cerrar es presionar. Quien cree eso titubea justo cuando toca pedir la firma.",
+  mc: [
+    ["Según Tracy, ¿qué limita primero tus ventas?", ["El precio de tu producto", "La imagen que tienes de ti como vendedor", "La competencia"], 1, "Tu ingreso sigue a tu autoconcepto. Cambia la imagen y cambia el resultado."],
+    ["Llegas a una cita pensando «seguro no le interesa». ¿Qué haces antes de entrar?", ["Entro rápido para salir de eso", "Cambio mi diálogo interno y entro como asesor", "Bajo el precio de entrada"], 1, "El cliente nota tu duda antes de que abras la boca."]
+  ],
+  resp: [{ ctx: "Estás por tocar la puerta de un cliente. Di en voz alta tu frase de arranque: quién eres como vendedor y a qué vienes.", m: "Soy un profesional de las ventas. Vengo a ayudar a esta persona a decidir bien y, si mi producto le sirve, le voy a pedir la venta con seguridad.", c: "Habla en positivo y en primera persona, se ve como asesor que ayuda y menciona que va a pedir la venta sin miedo." }] },
+
+{ id: "rechazo", u: 0, n: "El «no» no es contigo", src: "Brian Tracy", k: "base",
+  idea: "El rechazo es parte del oficio y casi nunca es personal: el cliente rechaza una oferta en un momento, no a ti. Tracy repite que la gran mayoría de las ventas se cierran después de varios intentos y que el vendedor promedio se rinde en el primero.",
+  f: ["Separa tu valor como persona del resultado de la cita.", "Después de un no, haz otra pregunta u otro cierre.", "Recuerda que el cliente también tiene miedo: a equivocarse."],
+  fr: ["Entiendo. ¿Puedo preguntarle qué es lo que lo detiene?"],
+  err: "Tomar el primer «no» como final y guardar tus cosas.",
+  mc: [
+    ["El cliente dice «no, gracias» en tu primer intento. ¿Qué significa casi siempre?", ["Que no le caíste bien", "Que todavía no ve suficiente razón para decidir", "Que nunca va a comprar"], 1, "Es un «todavía no». Tu trabajo es descubrir qué le falta."],
+    ["¿Cuál es el miedo más grande del comprador?", ["Equivocarse o pagar de más", "Que el vendedor se enoje", "Quedarse sin opciones"], 0, "Por eso las garantías, los testimonios y la calma venden."]
+  ],
+  resp: [{ cl: "No, gracias, no me interesa.", m: "Lo entiendo, y no quiero quitarle tiempo. Sólo por curiosidad, ¿qué fue lo que no le convenció: el producto o el momento?", c: "No discute ni se rinde; hace una pregunta para descubrir la razón real." }] },
+
+{ id: "emocion", u: 0, n: "Emoción primero, lógica después", src: "Brian Tracy", k: "base",
+  idea: "La gente decide con la emoción y después lo justifica con la lógica. Tracy lo aterriza en dos motores: el deseo de ganar y el miedo a perder, y el miedo a perder pesa más. Tu tarea es encontrar el botón caliente: el beneficio que más le importa a ese cliente en particular.",
+  f: ["Pregunta más de lo que hablas: el cliente debe hablar la mayor parte del tiempo.", "Detecta el beneficio que repite o que le cambia la cara. Ese es su botón.", "Presenta y cierra sobre ese beneficio, no sobre la lista completa."],
+  fr: ["De todo lo que le mostré, ¿qué es lo más importante para usted?"],
+  err: "Recitar todas las características. Cuando todo es importante, nada lo es.",
+  mc: [
+    ["¿Qué es el «botón caliente»?", ["El descuento máximo que puedes dar", "El beneficio que más le importa a este cliente", "La objeción más fuerte"], 1, "Una vez que lo encuentras, toda la venta gira alrededor de él."],
+    ["Un cliente repite tres veces «lo que quiero es no preocuparme». ¿Sobre qué cierras?", ["Sobre el precio", "Sobre la tranquilidad que va a tener", "Sobre las especificaciones técnicas"], 1, "Te dijo su botón tres veces. Úsalo."]
+  ],
+  resp: [{ ctx: "Acabas de terminar tu presentación. Haz la pregunta que descubre el botón caliente del cliente.", m: "De todo lo que vimos, ¿qué es lo que más le importa a usted resolver?", c: "Es una pregunta abierta que busca el beneficio principal; no ofrece descuento ni repite características." }] },
+
+/* ───────── U2 · Tipos de cliente ───────── */
+{ id: "tipos", u: 1, n: "Las dos preguntas", src: "Alex Dey", k: "base", lista: true,
+  idea: "Antes de presentar, lee a la persona. Alex Dey propone dos preguntas que contestas observando: ¿va rápido o va con calma? ¿Le importa más la gente o el asunto? Con eso sabes cuál de los cuatro tipos manda en tu cliente.",
+  f: ["Rápido y enfocado en la gente: sanguíneo. Compra la experiencia y cómo lo van a ver.", "Rápido y enfocado en el resultado: colérico. Compra poder, control y eficiencia.", "Con calma y enfocado en los números: flemático. Compra tranquilidad.", "Con calma y enfocado en los sentimientos: melancólico. Compra significado y confianza en ti."],
+  fr: ["Tú te adaptas al ritmo del cliente, nunca al revés."],
+  err: "Darle la misma presentación a todo el mundo.",
+  mc: [
+    ["Te recibe de pie, mira el reloj y pregunta «¿cuánto cuesta?». ¿Qué tipo manda?", ["Sanguíneo", "Colérico", "Flemático", "Melancólico"], 1, "Rápido y enfocado en el resultado."],
+    ["Te ofrece café, saca la calculadora y pregunta por la letra chiquita.", ["Sanguíneo", "Colérico", "Flemático", "Melancólico"], 2, "Con calma y enfocado en los números."],
+    ["Te cuenta un chiste, te pregunta de dónde eres y habla con las manos.", ["Sanguíneo", "Colérico", "Flemático", "Melancólico"], 0, "Rápido y enfocado en la gente."]
+  ],
+  resp: [{ cl: "Tengo cinco minutos. ¿Qué me traes?", ctx: "Es un cliente colérico. Da tu frase de entrada.", m: "Voy al grano: esto le ahorra diez horas de trabajo a la semana. Le muestro en tres minutos cómo, y usted decide.", c: "Directo, un resultado concreto, breve, deja la decisión en manos del cliente; sin rodeos ni chistes." }] },
+
+{ id: "tipos-cierre", u: 1, n: "Un cierre para cada tipo", src: "Alex Dey", k: "base", lista: true,
+  idea: "El mismo cierre gana con uno y pierde con otro. Al sanguíneo le funcionan las imágenes y el futuro; al colérico, opciones rápidas y pruebas; al flemático, números ordenados y cero presión; al melancólico, sus seres queridos y la confianza.",
+  f: ["Sanguíneo: insinuaciones y envolvente. Cierra hoy, mañana ya se enfrió.", "Colérico: doble alternativa y comprobación. Corto y firme.", "Flemático: Benjamín Franklin, avión y proceso de eliminación. Sin prisa.", "Melancólico: doble alternativa con sus seres queridos e insinuaciones emocionales."],
+  fr: ["¿Lo firmamos a nombre suyo o de la empresa?"],
+  err: "Usar el Benjamín Franklin con un sanguíneo, que lo siente como tarea de escuela. O meterle prisa a un flemático: la presión lo congela.",
+  mc: [
+    ["¿Qué cierre evitas con un sanguíneo?", ["Insinuaciones", "Benjamín Franklin", "Envolvente"], 1, "Las listas y los números lo aburren."],
+    ["Un flemático dice «lo tengo que pensar». ¿Qué te conviene?", ["Decirle que la oferta vence hoy", "Proceso de eliminación, con calma", "Contarle un chiste"], 1, "Si lo dejas ir a pensarlo, lo piensa seis meses."],
+    ["¿Cuál es el riesgo con el melancólico?", ["Que te descarte en dos minutos", "Que diga que sí por pena y luego se arrepienta", "Que se aburra con los números"], 1, "Asegúrate de que esté convencido de verdad antes de firmar."]
+  ],
+  resp: [{ ctx: "Cliente melancólico, padre de familia, duda en silencio. Haz una doble alternativa que toque a sus seres queridos.", m: "¿Incluimos a sus hijos como beneficiarios o solamente a su esposa?", c: "Es una doble alternativa (dos opciones y ambas son un sí) y menciona a la familia." }] },
+
+/* ───────── U3 · Cierres de prueba ───────── */
+{ id: "sies", u: 2, n: "Síes pequeños", src: "Alex Dey", k: "base",
+  idea: "Un cierre de prueba es una pregunta pequeña que mide la temperatura: si la respuesta es favorable, el cliente ya está comprando un poco. Alex Dey recomienda juntar al menos cinco síes pequeños antes del cierre maestro, que es cuando pides la decisión.",
+  f: ["Presenta un beneficio.", "Haz un cierre de prueba sobre ese beneficio.", "Cuenta los síes. Con cinco, pasa al cierre maestro.", "Después de la pregunta de cierre, guarda silencio."],
+  fr: ["Después de la pregunta de cierre, guarda silencio."],
+  err: "Saltar al cierre final con cero síes acumulados, o seguir hablando después de preguntar.",
+  mc: [
+    ["¿Cuántos síes pequeños conviene juntar antes del cierre maestro?", ["Uno", "Al menos cinco", "Ninguno, se cierra directo"], 1, "Si no llevas cinco, ahí está la razón de que no cierres."],
+    ["Haces la pregunta de cierre y el cliente se queda callado. ¿Qué haces?", ["Le explico otra ventaja", "Guardo silencio y espero", "Le ofrezco un descuento"], 1, "Si hablas tú, le quitas la presión de decidir."],
+    ["Haces muchas presentaciones y pocos cierres. ¿Qué te falta?", ["Ver más gente", "Cierres de prueba y pedir la venta", "Mejorar el saludo"], 1, "Es la fuga más cara y la más común."]
+  ],
+  resp: [{ ctx: "Acabas de mostrar que tu producto se entrega en 24 horas. Haz un cierre de prueba sobre ese beneficio.", m: "Recibirlo en 24 horas le resuelve el problema de esta semana, ¿verdad?", c: "Es una pregunta corta, atada al beneficio, que busca un sí pequeño." }] },
+
+{ id: "doble", u: 2, num: 1, n: "Doble alternativa", src: "Alex Dey", k: "prueba",
+  idea: "Nunca preguntes algo que se conteste con «no». Ofrece dos opciones y cualquiera de las dos te acerca a la venta. El cliente siente que elige y, eligiendo, avanza.",
+  cuando: "Para pedir la cita, para definir entrega o pago y para cerrar.",
+  f: ["Da por hecho el sí.", "Ofrece dos opciones concretas.", "Calla y deja que escoja."],
+  fr: ["¿Le queda mejor mañana a las diez o el jueves a las cuatro?", "¿Lo prefiere de contado o en mensualidades?", "¿Lo registramos a su nombre o al de la empresa?"],
+  err: "Preguntar «¿cuándo tiene tiempo?» o «¿le interesa?». Las dos se contestan con un no.",
+  mc: [
+    ["¿Cuál es una doble alternativa?", ["¿Le gustaría agendar una cita?", "¿Nos vemos el martes en la mañana o el miércoles en la tarde?", "¿Cuándo tiene tiempo?"], 1, "Dos opciones y las dos son un avance."],
+    ["¿Por qué funciona?", ["Porque confunde al cliente", "Porque cualquiera de las dos respuestas es un avance", "Porque baja el precio"], 1, "El cliente decide entre cómo, no entre sí o no."]
+  ],
+  resp: [
+    { cl: "Sí me gusta, se ve bien.", m: "Qué bueno. ¿Lo quiere empezar este mes o prefiere arrancar el día primero?", c: "Ofrece dos opciones y las dos implican compra; no hace una pregunta de sí o no." },
+    { cl: "Mándeme la información y yo le aviso.", ctx: "Estás por teléfono pidiendo una cita.", m: "Con gusto. Para explicársela en diez minutos y no llenarle el correo, ¿le queda mejor mañana a las once o el jueves a las cinco?", c: "Convierte la evasiva en una cita ofreciendo dos horarios." }
+  ] },
+
+{ id: "amarre", u: 2, num: 2, n: "Amarre", src: "Alex Dey", k: "prueba",
+  idea: "Un amarre es una coletilla que pide confirmación: «¿verdad?», «¿no es cierto?», «¿no cree?». Cada vez que el cliente asiente, te da un sí pequeño. Va al final de la frase, al principio (invertido) o en medio (interno).",
+  f: ["Di una verdad que el cliente ya aceptó o va a aceptar.", "Ciérrala con el amarre.", "Espera el sí. Cambia la posición para que no suene a muletilla."],
+  fr: ["La seguridad de su familia es lo primero, ¿verdad?", "¿No es cierto que ahorrar tiempo le deja más ganancia?", "Ahora que lo vio funcionar, ¿verdad que se entiende fácil?"],
+  err: "Amarrar cada frase. Tres seguidos y suena a truco.",
+  mc: [
+    ["¿Cuál es un amarre invertido?", ["Es importante cuidar el gasto, ¿verdad?", "¿Verdad que es importante cuidar el gasto?", "¿Lo quiere en rojo o en azul?"], 1, "El amarre va al principio de la frase."],
+    ["¿Para qué sirve el amarre?", ["Para juntar síes pequeños", "Para contestar objeciones de precio", "Para pedir referidos"], 0, "Cada asentimiento es un sí que acumulas."]
+  ],
+  resp: [{ cl: "Lo que más me importa es que dure.", m: "Y un producto con cinco años de garantía le da esa tranquilidad, ¿no es cierto?", c: "Retoma lo que dijo el cliente y termina o empieza con una coletilla de confirmación." }] },
+
+{ id: "puerco", u: 2, num: 3, n: "Puercoespín", src: "Alex Dey", k: "prueba",
+  idea: "Si alguien te avienta un puercoespín, lo regresas de inmediato. Cuando el cliente hace una pregunta que huele a interés, no contestes «sí»: regrésala con otra pregunta que lo comprometa.",
+  f: ["Detecta la pregunta de interés.", "Regrésala: «¿Lo quiere…?», «¿Le gustaría…?».", "Su respuesta ya es un sí."],
+  fr: ["¿Lo quiere en color rojo?", "¿Le gustaría recibirlo antes del día quince?", "¿Necesita que incluya instalación?"],
+  err: "Contestar «sí, sí lo tenemos» y seguir explicando. Regalaste un cierre.",
+  mc: [
+    ["Cliente: «¿Lo tienen en azul?». ¿Cuál es la respuesta puercoespín?", ["Sí, claro, en azul y en gris", "¿Lo quiere en azul?", "Déjeme revisar el inventario"], 1, "Si contesta «sí», ya dijo que lo quiere."],
+    ["¿Cuándo usas el puercoespín?", ["Cuando el cliente pregunta algo que muestra interés", "Cuando dice que está caro", "Al saludar"], 0, "Preguntas sobre color, entrega o forma de pago son señales de compra."]
+  ],
+  resp: [{ cl: "¿Me lo pueden entregar este viernes?", m: "¿Le gustaría recibirlo este viernes?", c: "Devuelve la pregunta con otra pregunta que confirma el deseo; no contesta sólo «sí»." }] },
+
+{ id: "envolvente", u: 2, num: 4, n: "Envolvente", src: "Alex Dey", k: "prueba",
+  idea: "Haces una pregunta sobre cómo va a usar el producto cuando ya sea suyo. Para contestar, el cliente tiene que imaginarse dueño. Lo envuelves en el futuro.",
+  f: ["Habla como si ya lo tuviera.", "Pregunta por un detalle de uso: quién, dónde, cuándo.", "Escucha. Si contesta con detalle, ya compró en su mente."],
+  fr: ["¿A quién va a ser el primero en enseñárselo?", "¿En qué parte de la casa lo va a poner?", "¿Quién más de su equipo lo va a usar?"],
+  err: "Usar un condicional débil: «si lo llegara a comprar…». Habla en futuro seguro.",
+  mc: [
+    ["¿Cuál es un cierre envolvente?", ["¿Quién va a manejar el carro además de usted?", "¿Verdad que es bonito?", "¿Le interesa?"], 0, "Para contestar tiene que verse como dueño."],
+    ["¿Con qué tipo de cliente brilla más?", ["Sanguíneo, que vive en el futuro", "Flemático, que quiere números", "Con ninguno"], 0, "El sanguíneo se imagina presumiéndolo."]
+  ],
+  resp: [{ ctx: "Vendes un curso en línea.", cl: "Se ve interesante.", m: "¿Lo va a tomar usted sola o también lo va a compartir con su equipo?", c: "Pregunta sobre el uso futuro dando por hecho que ya es suyo." }] },
+
+{ id: "equivoc", u: 2, num: 5, n: "Equivocación", src: "Alex Dey", k: "prueba",
+  idea: "Te equivocas a propósito en un detalle. Si el cliente te corrige, acaba de confirmar que va a comprar: nadie corrige los detalles de algo que no piensa tomar.",
+  f: ["Escoge un dato que el cliente ya mencionó: fecha, color, cantidad.", "Repítelo mal, con naturalidad.", "Cuando te corrija, anótalo: «Perfecto, entonces el día veinte»."],
+  fr: ["Entonces lo necesita para el día quince, ¿cierto?", "Me dijo que eran tres licencias, ¿verdad?"],
+  err: "Equivocarte en algo serio como el precio. Sólo en detalles pequeños.",
+  mc: [
+    ["El cliente dijo que lo quiere para el 20. Tú dices «entonces para el 15, ¿verdad?» y él corrige: «no, el 20». ¿Qué pasó?", ["Perdiste credibilidad", "Confirmó la compra al corregir el detalle", "Nada"], 1, "Corregir la fecha es aceptar que hay entrega."],
+    ["¿En qué te conviene «equivocarte»?", ["En el precio", "En un detalle menor que el cliente ya dijo", "En el nombre del cliente"], 1, "Un detalle pequeño, nunca algo que dañe la confianza."]
+  ],
+  resp: [{ ctx: "La clienta mencionó que quiere el paquete para dos personas. Usa el cierre por equivocación.", m: "Entonces me dijo que el paquete era para tres personas, ¿verdad?", c: "Repite mal a propósito un detalle menor que la clienta ya había dicho, en tono de confirmación." }] },
+
+{ id: "rebote", u: 2, num: 6, n: "Rebote", src: "Alex Dey", k: "prueba",
+  idea: "El cliente te pone una condición o una objeción y tú la rebotas convertida en compromiso: si se lo resuelvo, ¿lo toma? Usas su propia fuerza a tu favor.",
+  f: ["Escucha la condición completa.", "Rebótala: «Si yo le consigo…, ¿lo tomaría hoy?».", "Ofrece sólo lo que sí puedes cumplir."],
+  fr: ["Si le consigo la entrega para el viernes, ¿lo tomaría hoy?", "Si logro que le respeten ese plazo, ¿cerramos el trato?"],
+  err: "Decir «sí se puede» gratis. Primero pide el compromiso y después concede.",
+  mc: [
+    ["Cliente: «Sólo me sirve si me lo dan a 12 meses». ¿Cuál es el rebote?", ["Sí, sí manejamos 12 meses", "Si le consigo los 12 meses, ¿lo dejamos listo hoy?", "Lo máximo son 6"], 1, "Primero el compromiso, luego la concesión."],
+    ["¿Qué cuidas siempre en el rebote?", ["Prometer sólo lo que puedes cumplir", "Hablar más rápido", "Subir el precio"], 0, "Una promesa rota te cuesta el cliente y sus referidos."]
+  ],
+  resp: [{ cl: "Me gusta, pero lo necesitaría en negro y no lo veo.", m: "Si le consigo el negro, ¿lo aparta hoy mismo?", c: "Convierte la condición en un compromiso de compra con la forma «si le consigo X, ¿lo toma?»." }] },
+
+{ id: "insinua", u: 2, num: 7, n: "Insinuaciones", src: "Alex Dey", k: "prueba",
+  idea: "Desde el principio siembras imágenes del cliente disfrutando el resultado. No pides nada: pintas la escena y él solo hace el resto. Con unos son imágenes de admiración; con otros, de tranquilidad.",
+  f: ["Elige la emoción que mueve a tu cliente: orgullo, diversión, paz.", "Pinta una escena concreta con «¿se imagina…?».", "Repítelo a lo largo de la plática, no sólo al final."],
+  fr: ["¿Se imagina la cara de sus amigos cuando llegue en este carro?", "¿Se imagina la tranquilidad de su familia el día que ya no tenga que preocuparse por esto?"],
+  err: "Insinuar una sola vez al final. Las imágenes se siembran durante toda la presentación.",
+  mc: [
+    ["¿Qué hace el cierre de las insinuaciones?", ["Pide la firma directamente", "Siembra imágenes del cliente disfrutando el resultado", "Compara ventajas y desventajas"], 1, "El cliente se convence con su propia imaginación."],
+    ["Para un melancólico, ¿qué imagen eliges?", ["La envidia de los vecinos", "La tranquilidad de su familia", "Los minutos que ahorra"], 1, "Con él, imágenes emocionales en lugar de imágenes de estatus."]
+  ],
+  resp: [{ ctx: "Vendes membresías de gimnasio. El cliente es sociable y bromista. Siembra una imagen.", m: "¿Se imagina la cara de sus amigos en diciembre cuando lo vean llegar con diez kilos menos?", c: "Pinta una escena concreta y emocional del resultado, adecuada a un sanguíneo: cómo lo van a ver los demás." }] },
+
+/* ───────── U4 · Cierres maestros ───────── */
+{ id: "comprob", u: 3, num: 8, n: "Comprobación", src: "Alex Dey", k: "maestro",
+  idea: "Antes de demostrar, pides el compromiso: si le compruebo lo que le importa, ¿lo toma? Así tu demostración deja de ser información y se vuelve la última condición antes de firmar.",
+  f: ["Identifica el resultado que el cliente quiere.", "Pregunta: «Si le demuestro que…, ¿lo tomaría?».", "Demuestra y regresa por el sí."],
+  fr: ["Si le demuestro que esto le ahorra diez horas de trabajo a la semana, ¿lo tomaría?"],
+  err: "Demostrar primero y preguntar después. El cliente dice «qué interesante» y no se compromete.",
+  mc: [
+    ["¿En qué orden va el cierre de comprobación?", ["Demuestro y luego pregunto si le gustó", "Pido el compromiso y luego demuestro", "Pido referidos y luego demuestro"], 1, "El compromiso va antes de la prueba."],
+    ["¿Con qué cliente funciona mejor?", ["Colérico: va directo al resultado", "Sanguíneo: quiere historias", "Con ninguno"], 0, "Si le compruebas, compra."]
+  ],
+  resp: [{ cl: "Yo lo único que quiero es vender más por internet.", m: "Si le demuestro con casos reales que este sistema le trae clientes nuevos cada semana, ¿lo arrancamos hoy?", c: "Usa la estructura «si le demuestro X (el resultado que pidió), ¿lo toma?» antes de demostrar." }] },
+
+{ id: "conclusion", u: 3, num: 9, n: "Por conclusión", src: "Alex Dey", k: "maestro",
+  idea: "Das la venta por hecha y empiezas a llenar el pedido. No preguntas «¿lo compra?»: preguntas el primer dato del formato. Si el cliente contesta y te deja escribir, compró.",
+  f: ["Saca el pedido con naturalidad.", "Pregunta un dato fácil: nombre completo, dirección, fecha.", "Escribe. Si no te detiene, sigue hasta la autorización.", "Si te detiene, hay una objeción: trátala y vuelve."],
+  fr: ["¿Cuál es su nombre completo, tal como va en la factura?", "¿A qué dirección se lo enviamos?"],
+  err: "Pedir permiso: «¿le parece si llenamos el pedido?». Eso invita al no.",
+  mc: [
+    ["¿Cómo arranca el cierre por conclusión?", ["«¿Entonces sí lo va a comprar?»", "«¿Cuál es su nombre completo?», mientras llenas el pedido", "«Piénselo y me avisa»"], 1, "No preguntas si compra: actúas como que ya compró."],
+    ["El cliente te detiene: «Espere, todavía no decido». ¿Qué significa?", ["Que perdiste la venta", "Que hay una objeción por resolver; la tratas y vuelves", "Que debes irte"], 1, "Te acaba de decir que falta algo. Averigua qué."]
+  ],
+  resp: [{ ctx: "Ya juntaste cinco síes. Cierra por conclusión.", cl: "Pues sí, me convence.", m: "Perfecto. ¿Cuál es su nombre completo, tal como debe aparecer en el pedido?", c: "No pregunta si compra; pide el primer dato del pedido dando la venta por hecha." }] },
+
+{ id: "franklin", u: 3, num: 10, n: "Benjamín Franklin", src: "Alex Dey", k: "maestro",
+  idea: "Para el indeciso analítico. Divides una hoja en dos columnas: razones a favor y razones en contra. Tú le ayudas con las razones a favor; las razones en contra las escribe él solo. Cuando la columna del sí es más larga, su propia lógica decide.",
+  f: ["«Hagamos lo que hacía Benjamín Franklin cuando tenía una decisión difícil.»", "Columna del sí: ayúdale a recordar cada beneficio que ya aceptó.", "Columna del no: dale la pluma y guarda silencio.", "Cuenten las dos columnas: «La respuesta se ve clara, ¿verdad?»."],
+  fr: ["Anotemos de un lado las razones para decidirse hoy y del otro las razones en contra.", "Veamos cuántas razones tiene a favor."],
+  err: "Ayudarle a llenar la columna del no. Ahí te callas.",
+  mc: [
+    ["En el Benjamín Franklin, ¿quién llena la columna del no?", ["Tú, para verte honesto", "El cliente, solo", "Nadie"], 1, "Sin tu ayuda casi nunca pasa de una o dos razones."],
+    ["¿Con quién NO conviene usarlo?", ["Con un flemático", "Con un sanguíneo, que lo siente como tarea", "Con un contador"], 1, "Está hecho para el analítico."]
+  ],
+  resp: [{ ctx: "Tu cliente es un ingeniero muy calmado. Inicia el cierre Benjamín Franklin.", cl: "No sé, es que no estoy seguro.", m: "Lo entiendo, es una decisión importante. Hagamos lo que hacía Benjamín Franklin: en esta hoja anotamos de un lado las razones para decidirse hoy y del otro las razones en contra, y vemos cuál pesa más. ¿Le parece?", c: "Propone con calma la lista de dos columnas, a favor y en contra, mencionando el método." }] },
+
+{ id: "elimina", u: 3, num: 11, n: "Proceso de eliminación", src: "Alex Dey", k: "maestro",
+  idea: "«Lo voy a pensar» casi nunca es la razón verdadera. Aceptas la frase y luego vas eliminando posibles causas una por una hasta que aparece la real, que casi siempre es el dinero.",
+  f: ["Acepta: «Me parece bien, veo que lo está tomando en serio».", "Aclara: «Sólo para entender, ¿qué es lo que quiere pensar?».", "Elimina: «¿Es la empresa? ¿Es el producto? ¿Soy yo?».", "Llega a la real: «¿Será la inversión?», y resuelve esa."],
+  fr: ["Sólo para aclarar mis ideas, ¿qué parte es la que quiere pensar?", "¿Es la calidad del producto? ¿Es la garantía? ¿Es la inversión?"],
+  err: "Contestar «claro, piénselo, le dejo mi tarjeta». Esa venta se enfría para siempre.",
+  mc: [
+    ["Cliente: «Lo voy a pensar». ¿Cuál es tu primer paso?", ["Discutir: «¿qué tiene que pensar?»", "Aceptar con calma y preguntar qué parte quiere pensar", "Dejar la tarjeta e irte"], 1, "Aceptar primero baja la defensa."],
+    ["¿Qué buscas con las preguntas de eliminación?", ["Cansar al cliente", "Encontrar la objeción real", "Ganar tiempo"], 1, "No puedes resolver una objeción que no conoces."]
+  ],
+  resp: [{ cl: "Déjeme pensarlo y yo le llamo.", m: "Me parece muy bien, se ve que lo está tomando en serio. Sólo para aclarar mis ideas: ¿qué es lo que quiere pensar? ¿Es el producto, es la garantía o es la inversión?", c: "Primero acepta sin discutir; después pregunta qué quiere pensar y ofrece opciones para aislar la objeción real." }] },
+
+{ id: "referencia", u: 3, num: 12, n: "Por referencia", src: "Alex Dey", k: "maestro",
+  idea: "Cuentas la historia breve de un cliente parecido que tenía la misma duda, decidió y le fue bien. La gente no quiere ser la primera: quiere saber que alguien como ella ya lo hizo.",
+  f: ["Elige un caso real y parecido: misma duda, mismo tipo de persona.", "Cuenta duda, decisión y resultado en treinta segundos.", "Regresa al cliente: «¿Le gustaría el mismo resultado?»."],
+  fr: ["Déjeme contarle lo que le pasó a un cliente con la misma duda que usted.", "Lo mismo me dijo una clienta hace un mes; hoy es de las más contentas."],
+  err: "Inventar el caso. Usa historias reales; mejor todavía, un audio del propio cliente.",
+  mc: [
+    ["¿Qué hace fuerte al cierre por referencia?", ["Que el caso sea real y parecido al cliente", "Que la historia sea muy larga", "Que mencione descuentos"], 0, "El cliente tiene que verse en la historia."],
+    ["El cliente se frenó en la mensualidad. ¿Qué historia eliges?", ["La de alguien a quien le sobraba el dinero", "La de alguien que dudó por la mensualidad, decidió y le fue bien", "Tu historia personal"], 1, "Misma duda, final feliz."]
+  ],
+  resp: [{ cl: "Es que nunca he comprado algo así, me da desconfianza.", m: "Lo entiendo; lo mismo sentía un cliente que tiene un negocio como el suyo. Empezó con el plan básico hace seis meses y ya renovó. ¿Le gustaría escuchar lo que me dijo?", c: "Cuenta un caso breve de un cliente parecido con la misma duda y un buen resultado, y regresa con una pregunta." }] },
+
+/* ───────── U5 · Cierres de Brian Tracy ───────── */
+{ id: "invitacion", u: 4, n: "Invitación", src: "Brian Tracy", k: "tracy",
+  idea: "Al terminar la presentación preguntas si quedó alguna duda y, si no hay, invitas a decidir con una frase suave. Tracy insiste en que muchas ventas se pierden sólo porque nadie invitó a comprar.",
+  f: ["«¿Tiene alguna pregunta o duda que no haya cubierto?»", "Si dice que no: «Entonces, ¿por qué no lo prueba?».", "Silencio."],
+  fr: ["Si le gusta lo que vio, ¿por qué no lo prueba?", "¿Tiene alguna pregunta o duda que no haya cubierto?"],
+  err: "Terminar con «bueno, ¿qué le parece?». Eso pide una opinión, no una decisión.",
+  mc: [
+    ["¿Qué preguntas antes de la invitación?", ["Si tiene alguna duda que no hayas cubierto", "Si le alcanza el dinero", "Si conoce a alguien más"], 0, "Si no hay dudas, el camino está libre para invitar."],
+    ["¿Cuál es el cierre por invitación?", ["«¿Por qué no lo prueba?»", "«¿Qué opina?»", "«Lo llamo la próxima semana»"], 0, "Directo y sin presión."]
+  ],
+  resp: [{ ctx: "Terminaste tu presentación.", cl: "No, ninguna duda, todo claro.", m: "Me da gusto. Entonces, ¿por qué no lo prueba?", c: "Invita a decidir de forma directa y suave; no pide opinión ni pospone." }] },
+
+{ id: "directivo", u: 4, n: "Directivo", src: "Brian Tracy", k: "tracy",
+  idea: "Confirmas que todo tiene sentido y tú diriges el siguiente paso describiendo qué va a pasar. Das la decisión por tomada y le quitas al cliente el peso de decir «sí, compro».",
+  f: ["«¿Tiene sentido para usted lo que hemos visto?»", "«Entonces el siguiente paso es…», y describes el trámite.", "Empieza a hacerlo."],
+  fr: ["¿Tiene sentido para usted lo que hemos visto hasta aquí?", "Entonces el siguiente paso es llenar la solicitud, y el lunes lo tiene funcionando."],
+  err: "Preguntar «¿qué quiere hacer?» y dejar al cliente solo con la decisión.",
+  mc: [
+    ["¿Qué pregunta abre el cierre directivo?", ["«¿Tiene sentido para usted hasta aquí?»", "«¿Cuánto quiere gastar?»", "«¿Lo quiere pensar?»"], 0, "Un sí aquí te da permiso de dirigir."],
+    ["Después de ese sí, ¿qué haces?", ["Explico el siguiente paso y lo empiezo", "Espero a que el cliente proponga", "Repito la presentación"], 0, "Tú llevas el proceso."]
+  ],
+  resp: [{ cl: "Sí, me hace sentido.", m: "Excelente. Entonces el siguiente paso es sencillo: llenamos su solicitud ahora, hace el primer pago y el lunes lo tiene instalado.", c: "Describe el siguiente paso concreto dando la decisión por tomada." }] },
+
+{ id: "secundario", u: 4, n: "Punto menor", src: "Brian Tracy", k: "tracy",
+  idea: "La decisión grande asusta; una pequeña no. Cierras sobre un detalle secundario: al decidir el detalle, el cliente aceptó el todo.",
+  f: ["Elige un detalle menor: color, fecha, forma de pago, a nombre de quién.", "Pregunta por el detalle, no por la compra.", "Anótalo y avanza."],
+  fr: ["¿Lo va a querer con la garantía extendida o con la estándar?", "¿La factura va a su nombre o al de su empresa?"],
+  err: "Regresar a la decisión grande: «entonces, ¿sí lo compra?».",
+  mc: [
+    ["¿Por qué funciona cerrar sobre un punto menor?", ["Porque decidir un detalle es más fácil que decidir la compra entera", "Porque distrae del precio", "Porque alarga la cita"], 0, "Quien elige el color ya eligió el carro."],
+    ["¿Cuál es un cierre sobre un punto menor?", ["«¿Lo compra o no?»", "«¿Lo quiere con entrega a domicilio o pasa por él?»", "«¿Qué le pareció?»"], 1, "La respuesta implica la compra."]
+  ],
+  resp: [{ ctx: "Vendes un automóvil. El cliente lo mira con ganas pero no dice nada. Cierra sobre un punto menor.", m: "Por cierto, ¿lo va a querer con los rines deportivos o con los de fábrica?", c: "Pregunta por un detalle secundario cuya respuesta implica que compra." }] },
+
+{ id: "autoriza", u: 4, n: "Autorización", src: "Brian Tracy", k: "tracy",
+  idea: "En lugar de pedir «la firma», pides una autorización para empezar. Marcas el lugar, le pasas la pluma y le dices qué vas a hacer tú enseguida.",
+  f: ["Ten el pedido lleno.", "«Si me autoriza aquí, yo me encargo del resto.»", "Señala el lugar, entrega la pluma y calla."],
+  fr: ["Si me autoriza aquí, empezamos de inmediato.", "Sólo necesito su visto bueno en esta línea y yo me encargo de todo lo demás."],
+  err: "Decir «firme el contrato». Esas palabras despiertan el miedo.",
+  mc: [
+    ["¿Qué palabras evitas al cerrar?", ["Autorización", "Contrato y firma", "Visto bueno"], 1, "Suenan a compromiso legal y a riesgo."],
+    ["¿Qué haces justo después de pedir la autorización?", ["Sigo hablando de beneficios", "Entrego la pluma y guardo silencio", "Ofrezco un descuento"], 1, "El silencio hace el resto."]
+  ],
+  resp: [{ ctx: "El pedido ya está lleno y el cliente está de acuerdo en todo. Pide la autorización.", m: "Perfecto. Si me autoriza aquí, yo me encargo de todo lo demás y mañana mismo empezamos.", c: "Pide «autorización» o «visto bueno», no «firma de contrato», y dice qué pasará enseguida." }] },
+
+{ id: "perdida", u: 4, n: "Venta perdida", src: "Brian Tracy", k: "tracy",
+  idea: "Cuando todo parece perdido, te despides de verdad. Ya de salida, con la tensión abajo, preguntas con humildad qué fue lo que lo detuvo. Muchas veces ahí aparece la objeción real y puedes volver a sentarte.",
+  f: ["Acepta el no y recoge tus cosas.", "En la puerta: «Sólo para aprender, ¿cuál fue la verdadera razón?».", "Si la dice: «Fue mi culpa, eso no lo expliqué bien». Regresa y resuélvela."],
+  fr: ["Antes de irme, sólo para aprender: ¿cuál fue la verdadera razón por la que no se decidió?"],
+  err: "Usarlo como truco agresivo. Funciona porque de verdad bajas la presión.",
+  mc: [
+    ["¿En qué momento se usa?", ["Al principio de la cita", "Cuando ya aceptaste el no y te estás yendo", "Antes de dar el precio"], 1, "Sin presión, el cliente dice la verdad."],
+    ["El cliente contesta: «Pensé que la mensualidad era muy alta». ¿Qué haces?", ["Agradezco y me voy", "Asumo la culpa por no explicarlo bien y resuelvo ese punto", "Le digo que está equivocado"], 1, "Ya tienes la objeción real. Trabájala."]
+  ],
+  resp: [{ ctx: "El cliente dijo que no por tercera vez. Ya guardaste todo y estás en la puerta.", m: "Le agradezco mucho su tiempo. Antes de irme, sólo para aprender y mejorar: ¿cuál fue la verdadera razón por la que no se decidió?", c: "Agradece, baja la presión y pregunta con humildad por la razón real." }] },
+
+/* ───────── U6 · Objeciones ───────── */
+{ id: "obj-metodo", u: 5, n: "Cómo se recibe una objeción", src: "Brian Tracy", k: "obj", tags: "objecion objeciones responder discutir malas experiencias desconfianza",
+  idea: "Una objeción no es un rechazo: es una pregunta mal vestida. Tracy enseña a tratarla como una petición de más información y a notar que casi todas caben en unas seis categorías que puedes preparar de antemano. Nunca discutas: escucha completo, haz una pausa, pregunta y luego responde.",
+  f: ["Escucha hasta el final, sin interrumpir.", "Haz una pausa de dos o tres segundos.", "Aclara: «¿A qué se refiere exactamente?».", "Responde: «Entiendo cómo se siente; otros sintieron lo mismo, y esto fue lo que descubrieron»."],
+  fr: ["Entiendo cómo se siente. Otros clientes sintieron lo mismo, y esto fue lo que descubrieron."],
+  err: "Contestar rápido y a la defensiva. Ganas la discusión y pierdes la venta.",
+  mc: [
+    ["¿Qué es una objeción, según Tracy?", ["Un rechazo definitivo", "Una petición de más información", "Una falta de respeto"], 1, "El que objeta está interesado; el que no, ni pregunta."],
+    ["¿Qué haces primero cuando llega una objeción?", ["Contesto de inmediato", "Escucho completo y hago una pausa", "Cambio de tema"], 1, "La pausa muestra que lo tomaste en serio."]
+  ],
+  resp: [{ cl: "He tenido malas experiencias con empresas como la suya.", m: "Entiendo cómo se siente, y otros clientes sintieron lo mismo antes de trabajar con nosotros. ¿Qué fue exactamente lo que le pasó? Así le digo con honestidad cómo lo manejamos aquí.", c: "Muestra empatía y pregunta para aclarar, sin discutir ni defenderse." }] },
+
+{ id: "obj-caro", u: 5, n: "«Está muy caro»", src: "Tracy y Dey", k: "obj", tags: "caro precio costoso carisimo mucho dinero descuento barato competencia mas barato",
+  idea: "Precio y costo no son lo mismo. Cuando alguien dice «está caro», primero averigua comparado con qué. Después reduce la diferencia a lo mínimo: lo que parece mucho de golpe es poco por día.",
+  f: ["«¿Caro comparado con qué?» o «¿Cuánto es demasiado?».", "Aísla la diferencia, no el total.", "Divídela por el tiempo de uso: por mes, por día.", "Compárala con algo cotidiano y cierra con doble alternativa."],
+  fr: ["¿Caro comparado con qué?", "Estamos hablando de menos de lo que cuesta un café al día."],
+  err: "Bajar el precio de inmediato. Le enseñas al cliente que tu primer precio no era en serio.",
+  mc: [
+    ["Cliente: «Está muy caro». ¿Cuál es tu primera respuesta?", ["«Le hago un descuento»", "«¿Caro comparado con qué?»", "«No es caro»"], 1, "Primero entiende contra qué está comparando."],
+    ["La diferencia con la competencia es de $3,650 al año. ¿Cómo la presentas?", ["Como $3,650", "Como $10 al día", "No la menciono"], 1, "Reducida a lo mínimo, la diferencia deja de asustar."]
+  ],
+  resp: [{ cl: "Me gusta, pero se me hace muy caro.", m: "Lo entiendo. ¿Caro comparado con qué? Mire, la diferencia son como diez pesos al día, menos que un café, por tener la garantía completa. ¿Lo dejamos en el plan mensual o en el anual?", c: "Pregunta comparado con qué o aísla la diferencia, la reduce a una cifra pequeña y vuelve a cerrar; no ofrece descuento de entrada." }] },
+
+{ id: "obj-pensar", u: 5, n: "«Lo voy a pensar»", src: "Tracy y Dey", k: "obj", tags: "pensar pensarlo voy a pensar luego despues le aviso le llamo unos dias",
+  idea: "Para Tracy, «lo voy a pensar» es una despedida educada: quien se va a pensarlo rara vez regresa. Para Dey, es la señal de usar el proceso de eliminación. Los dos coinciden: hay que encontrar la razón real antes de que el cliente se levante.",
+  f: ["Acepta sin pelear: «Es buena idea pensarlo bien».", "Pregunta la razón: «Evidentemente tiene una buena razón. ¿Puedo preguntarle cuál es?».", "Si no sale: «¿Es el dinero?».", "Resuelve esa única razón y cierra."],
+  fr: ["Evidentemente tiene una buena razón para querer pensarlo. ¿Puedo preguntarle cuál es?"],
+  err: "Creer que va a regresar. Dale dentro de la cita todo lo que necesita para decidir dentro de la cita.",
+  mc: [
+    ["¿Qué significa casi siempre «lo voy a pensar»?", ["Que ya decidió comprar", "Que hay una duda que no ha dicho", "Que necesita un folleto"], 1, "Hay algo que no te dijo. Encuéntralo."],
+    ["¿Qué pregunta saca la razón real cuando el cliente no la dice?", ["«¿Es el dinero?»", "«¿Cuándo le llamo?»", "«¿Le dejo mi tarjeta?»"], 0, "Casi siempre es eso, y casi nadie lo dice primero."]
+  ],
+  resp: [{ cl: "Suena bien, déjeme pensarlo unos días.", m: "Claro, es una decisión que vale la pena pensar bien. Evidentemente tiene una buena razón para querer pensarlo; ¿puedo preguntarle cuál es? ¿Es la inversión?", c: "Acepta primero, pregunta por la razón y sondea si es el dinero; no se despide ni deja la tarjeta." }] },
+
+{ id: "obj-consultar", u: 5, n: "«Lo tengo que consultar»", src: "Tracy y Dey", k: "obj", tags: "consultar esposa esposo marido mujer socio pareja jefe platicar preguntarle",
+  idea: "Puede ser verdad o puede ser un escudo. Primero separa una cosa de la otra: si dependiera sólo de él, ¿lo tomaría? Si dice que sí, ya tienes un aliado y tu trabajo es conseguir la cita con los dos. Nunca dejes que tu cliente presente por ti.",
+  f: ["«Si dependiera sólo de usted, ¿lo tomaría?»", "Si duda, la objeción es suya y no de la esposa o el socio. Trátala.", "Si dice que sí, agenda con ambos usando doble alternativa.", "Ofrece estar presente para resolver las dudas."],
+  fr: ["Si dependiera solamente de usted, ¿lo tomaría hoy?", "¿Los veo a los dos mañana en la tarde o el sábado en la mañana?"],
+  err: "Decir «claro, coméntelo y me avisa». Él no sabe vender tu producto.",
+  mc: [
+    ["Cliente: «Tengo que consultarlo con mi esposa». ¿Cuál es tu primera pregunta?", ["«¿Y ella por qué decide?»", "«Si dependiera sólo de usted, ¿lo tomaría?»", "«¿Le dejo un folleto?»"], 1, "Así sabes si es consulta real o escudo."],
+    ["Dice que sí lo tomaría. ¿Cuál es el siguiente paso?", ["Esperar su llamada", "Agendar una cita con los dos", "Mandar la información por correo"], 1, "Tú presentas; él te apoya."]
+  ],
+  resp: [{ cl: "Me interesa, pero lo tengo que platicar con mi socio.", m: "Me parece lo correcto. Dígame, si dependiera solamente de usted, ¿lo tomaría? Perfecto. Entonces, para que su socio tenga la información completa, ¿los veo a los dos mañana a las diez o el jueves en la tarde?", c: "Pregunta si lo tomaría por su cuenta y propone una cita con ambos con dos opciones." }] },
+
+{ id: "obj-proveedor", u: 5, n: "«Ya le compro a un conocido»", src: "Alex Dey", k: "obj", tags: "ya tengo proveedor conocido cunado amigo familiar otra empresa ya compro lealtad zapato",
+  idea: "La lealtad es respetable y no se ataca. En el material de Alex Dey esto se trabaja con «el zapato en su pie»: invitas al cliente a cambiar de lugar y ver la situación desde otros zapatos. El objetivo no siempre es vender hoy; a veces es quedar abierto para el siguiente ciclo.",
+  nota: "El nombre y el uso de este cierre vienen del material de Alex Dey. El guion de ejemplo fue redactado para esta app.",
+  f: ["Reconoce la lealtad: «Eso habla muy bien de usted».", "Cambia los zapatos: «Si usted fuera su proveedor, ¿querría que su cliente se perdiera de algo mejor por compromiso?».", "Pide sólo comparar, no cambiar.", "Si no es hoy, deja fecha: «¿Cuándo vence su contrato actual?»."],
+  fr: ["No le pido que cambie, sólo que compare."],
+  err: "Hablar mal del proveedor actual. Estás criticando una decisión del cliente.",
+  mc: [
+    ["¿Qué haces primero ante «ya le compro a mi cuñado»?", ["Criticar al cuñado", "Reconocer la lealtad", "Bajar el precio"], 1, "Atacar su decisión es atacarlo a él."],
+    ["No logras la venta hoy. ¿Qué te llevas de todos modos?", ["Nada", "La fecha en que vence su contrato actual, y referidos", "Un compromiso de palabra"], 1, "Quedas abierto para el siguiente ciclo y sales con nombres."]
+  ],
+  resp: [{ cl: "Gracias, pero ya tengo mi póliza con mi cuñado.", m: "Qué bueno, eso habla muy bien de usted. Déjeme preguntarle algo: si usted estuviera en los zapatos de su cuñado, ¿querría que usted se perdiera de una mejor cobertura sólo por compromiso? No le pido que cambie, sólo que compare. ¿Cuándo vence su póliza actual?", c: "Respeta la lealtad, invita a cambiar de perspectiva (ponerse en otros zapatos), pide comparar y busca una fecha futura." }] },
+
+{ id: "obj-dificil", u: 5, n: "«Es una decisión difícil»", src: "Alex Dey", k: "obj", tags: "decision dificil miedo equivocarme equivocar no estoy seguro inseguro dudas riesgo avion",
+  idea: "Hay clientes que quieren comprar y aun así se congelan por miedo a equivocarse. El material de Alex Dey nombra para este momento el «cierre del avión»: una imagen que le quita el miedo sin empujarlo. La idea de fondo es que nadie decide con certeza total; se decide cuando lo esencial está revisado.",
+  nota: "El nombre y el uso de este cierre vienen del material de Alex Dey. El guion de ejemplo fue redactado para esta app.",
+  f: ["Valida: «Tiene razón, es una decisión importante».", "Usa la imagen: un piloto no espera el cielo perfecto en toda la ruta; despega cuando revisó lo esencial.", "Revisen juntos lo esencial: ¿le sirve?, ¿lo puede pagar?, ¿tiene garantía?", "Con las tres en sí: «Entonces ya puede despegar tranquilo»."],
+  fr: ["Un piloto despega cuando ya revisó lo esencial."],
+  err: "Meter prisa: «decídase ya». A este cliente la presión lo congela.",
+  mc: [
+    ["¿A qué cliente le sirve más este cierre?", ["Al colérico apurado", "Al flemático que teme equivocarse", "Al sanguíneo distraído"], 1, "Le quita el miedo sin empujarlo."],
+    ["¿Qué revisas con él antes de «despegar»?", ["Que le sirve, que lo puede pagar y que tiene garantía", "Que firme rápido", "Que no pregunte más"], 0, "Con lo esencial revisado, decidir deja de dar miedo."]
+  ],
+  resp: [{ cl: "Es que es una decisión difícil, no me quiero equivocar.", m: "Tiene razón, es importante, y qué bueno que lo tome en serio. Mire, un piloto no espera el cielo perfecto en toda la ruta: despega cuando revisó lo esencial. Revisemos lo suyo: ¿le resuelve lo que necesita? ¿La mensualidad le queda cómoda? ¿Y tiene la garantía por escrito? Entonces ya puede despegar tranquilo.", c: "Valida el miedo sin presionar, usa una imagen o analogía que reduce el miedo a equivocarse y repasa los puntos esenciales." }] },
+
+{ id: "obj-dinero", u: 5, n: "«Ahorita no tengo dinero»", src: "Brian Tracy", k: "obj", tags: "no tengo dinero ahorita no me alcanza presupuesto no puedo pagar sin dinero quincena",
+  idea: "Primero distingue si no tiene el dinero o si no ve el valor. La pregunta de aislamiento que enseña Tracy lo resuelve: supongamos que eso no fuera problema, ¿habría algo más que lo detuviera? Si no hay nada más, el asunto ya no es si compra, sino cómo paga.",
+  f: ["Aísla: «Supongamos que el dinero no fuera problema. ¿Habría alguna otra cosa que le impidiera decidirse hoy?».", "Si hay otra cosa, esa es la objeción real.", "Si no, arma el cómo: apartado, plazos, fecha de inicio.", "Cierra con doble alternativa sobre la forma de pago."],
+  fr: ["Supongamos que el dinero no fuera problema. ¿Habría alguna otra cosa que le impidiera decidirse hoy?"],
+  err: "Aceptar «no tengo dinero» como final sin aislarla.",
+  mc: [
+    ["¿Para qué sirve «supongamos que el dinero no fuera problema»?", ["Para saber si es la única objeción", "Para ofrecer un préstamo", "Para terminar la cita"], 0, "Aíslas la objeción antes de resolverla."],
+    ["El cliente contesta: «No, sólo es el dinero». ¿Qué sigue?", ["Despedirte", "Trabajar el cómo: plazos, apartado, fecha", "Insistir en los beneficios"], 1, "Ya quiere; ayúdale a poder."]
+  ],
+  resp: [{ cl: "Sí me gusta, pero ahorita no tengo dinero.", m: "Lo entiendo perfectamente. Supongamos por un momento que el dinero no fuera problema: ¿habría alguna otra cosa que le impidiera decidirse hoy? Entonces veamos cómo acomodarlo: ¿le queda mejor empezar con un apartado pequeño o en mensualidades desde el día quince?", c: "Aísla la objeción («supongamos que no fuera problema…») y luego propone una forma de pago con opciones." }] },
+
+/* ───────── U7 · Después del sí ───────── */
+{ id: "ref-nombres", u: 6, n: "Pide los nombres", src: "Alex Dey", k: "post", tags: "referidos referido recomendados nombres recomendar conoce a alguien",
+  idea: "Los treinta segundos después del cierre son los más rentables de la cita. El error es preguntar «¿conoce a alguien?»: la mente se queda en blanco. Dale cajones donde buscar: familia, trabajo, vecinos, alguien en su misma situación.",
+  cuando: "Justo después del cierre o en la entrega. Nunca antes de cerrar.",
+  f: ["Abre un cajón: «¿Hay alguien más en su familia que se pudiera beneficiar con esto?».", "Pide nombre y apellido.", "Abre otro cajón: trabajo, vecinos, compadres.", "Con cuatro cajones casi siempre salen tres nombres o más."],
+  fr: ["¿Hay alguien más en su familia que se pudiera beneficiar con esto?", "¿Y en su trabajo? ¿Algún compañero con quien platique de estas cosas?"],
+  err: "Pedir referidos antes de cerrar: suena a que con él ya te diste por vencido.",
+  mc: [
+    ["¿Cuál es la peor forma de pedir referidos?", ["«¿Conoce a alguien que le pueda interesar?»", "«¿Quién de sus hermanos tiene hijos pequeños?»", "«¿Y en su trabajo, algún compañero?»"], 0, "Es tan abierta que la mente se queda en blanco."],
+    ["¿Cuándo se piden?", ["Antes de dar el precio", "Justo después del cierre o en la entrega", "Sólo si el cliente los ofrece"], 1, "Es el momento de mayor entusiasmo y confianza."],
+    ["El cliente dice «no conozco a nadie». ¿Qué haces?", ["Insisto con la misma pregunta", "Le cambio de cajón con preguntas concretas", "Me voy"], 1, "Casi nunca es verdad: su mente se quedó en blanco."]
+  ],
+  resp: [{ ctx: "El cliente acaba de autorizar el pedido y está contento. Pide el primer referido.", m: "Déjeme preguntarle algo: ¿hay alguien más en su familia que se pudiera beneficiar con esto? ¿Cómo se llama? ¿Y su apellido?", c: "Pregunta por un grupo concreto (familia, trabajo, vecinos) en vez de «¿conoce a alguien?» y pide el nombre." }] },
+
+{ id: "ref-cita", u: 6, n: "Que el cliente te abra la puerta", src: "Alex Dey", k: "post", tags: "referidos cita llamar tarjeta whatsapp mensaje recomendado testimonio audio",
+  idea: "Un nombre no es una cita. El paso que casi nadie se atreve a pedir es que el propio cliente llame al referido. Si no puede, que firme tu tarjeta con el nombre arriba. Y cuando llegues con el referido: nombre de quien te recomendó, razón corta y doble alternativa.",
+  f: ["«¿Sería tan amable de llamarle para ver si me puede atender hoy en la tarde o mañana?»", "Si no puede: su firma en el reverso de tu tarjeta y el nombre del referido.", "Con el referido: quién te manda, una razón positiva y dos opciones.", "Cuando el referido compre, avísale y agradécele a quien te recomendó."],
+  fr: ["¿Sería tan amable de llamarle para ver si me puede atender hoy en la tarde o mañana en la mañana?"],
+  err: "Terminar el mensaje al referido con «¿cuándo tiene tiempo?». Siempre dos opciones.",
+  mc: [
+    ["¿Qué pesa más al llegar con un referido?", ["Tu folleto", "La llamada o la tarjeta firmada de quien te recomendó", "Tu título"], 1, "Llegas con la mitad de la venta hecha."],
+    ["¿Qué tres cosas lleva tu primer mensaje a un referido?", ["Precio, descuento y vigencia", "Quién te recomendó, una razón corta y positiva, y dos opciones de cita", "Tu currículum, tu empresa y tu teléfono"], 1, "Nombre al principio, doble alternativa al final."],
+    ["El prospecto NO te compró. ¿Le pides referidos?", ["No, sería abusar", "Sí: «¿quién de las personas que conoce cree que sí lo necesita ahorita?»", "Sólo por correo"], 1, "Ya sabe qué ofreces y muchas veces te da un nombre con alivio."]
+  ],
+  resp: [{ ctx: "Escribe tu primer WhatsApp a Gabriel Méndez (nombre de ejemplo), referido por su cuñado Roberto Gómez.", m: "Buenas tardes, señor Méndez. Soy asesor de mi empresa. Su cuñado Roberto Gómez me pidió que me pusiera en contacto con usted porque acaba de tomar algo que le gustó mucho y quiso que usted también lo conociera. ¿Le queda mejor que platiquemos mañana en la mañana o el jueves en la tarde?", c: "Menciona al inicio quién lo recomendó, da una razón corta y positiva y termina con dos opciones de horario." }] },
+
+{ id: "numeros", u: 6, n: "Mide tu juego", src: "Alex Dey", k: "post", lista: true, tags: "medir numeros agenda reporte grafica prospectos presentaciones metas productividad",
+  idea: "Tu ingreso sale de tres números: a cuánta gente viste, a cuánta le presentaste y a cuánta le cerraste. Cuando uno se cae, tu comisión se cae con él. Si no los mides, sólo te queda trabajar más horas sin saber dónde se rompió la cadena.",
+  f: ["Prospectos bajos: te falta volumen. Ningún cierre lo compensa.", "Prospectos altos y presentaciones bajas: falla la entrada o la precalificación.", "Presentaciones altas y cierres bajos: no estás pidiendo la venta. Pule tus cierres de prueba.", "Todo parejo y bajo: es actividad y actitud, no técnica."],
+  fr: ["Planea tu trabajo y trabaja tu plan."],
+  err: "Ponerte metas de dinero. Ponte metas de actividad, que son las que dependen de ti.",
+  mc: [
+    ["Viste a 30 personas y le presentaste a 4. ¿Dónde está la fuga?", ["En los cierres", "En la entrada: cómo abres o a quién ves", "En el precio"], 1, "Ves gente y no logras presentarle."],
+    ["Presentaste 12 veces y cerraste 1. ¿Qué trabajas?", ["Prospección en frío", "Cierres de prueba y pedir la venta", "El saludo"], 1, "Presentas bien y no pides la venta."],
+    ["¿Qué tipo de meta mensual conviene?", ["De dinero", "De actividad: prospectos, presentaciones y cierres", "De horas"], 1, "El dinero depende de mucha gente; la actividad, sólo de ti."]
+  ],
+  resp: [{ ctx: "Escribe el comentario de tu reporte diario para un cliente que se frenó en la mensualidad.", m: "Le interesa la cobertura educativa. Se frenó en la mensualidad. Próxima visita: probar el cierre por referencia.", c: "Anota la objeción concreta y qué cierre probar la próxima vez; no escribe sólo «interesado»." }] }
+],
+TIPOS: [
+  { id: "sanguineo", n: "Sanguíneo", eje: "Rápido · gente", voz: "airy", persona: "Paco Rivas",
+    senal: "Bromea, habla con las manos y en los primeros minutos te pregunta algo personal o te cuenta algo que no tiene que ver con la venta.",
+    quiere: "Quedar bien, que lo admiren, ser el primero en tenerlo. Compra la experiencia.",
+    presenta: "Con energía e historias. Nada de tablas. Mantén tú el control, porque la plática se le va sola.",
+    cierres: ["insinua", "envolvente"], espanta: "Los detalles técnicos, las presentaciones largas y serias, el Benjamín Franklin.",
+    riesgo: "Dice que sí con muchas ganas y luego no contesta el teléfono. Con él se cierra hoy.",
+    rol: "Eres muy sociable y bromista. Te desvías del tema, cuentas anécdotas y te emocionas fácil, pero eres inconstante. Te importa cómo te van a ver los demás. Los números y los detalles técnicos te aburren." },
+  { id: "colerico", n: "Colérico", eje: "Rápido · resultado", voz: "glassy", persona: "Marta Salinas",
+    senal: "Te recibe de pie o te dice «tiene cinco minutos». Mira el reloj y te interrumpe para preguntar cuánto cuesta.",
+    quiere: "El resultado, y ya: cuánto gana, cuánto tiempo ahorra, qué problema se quita. Compra control.",
+    presenta: "Directo al grano, con tus tres mejores beneficios y nada más. Firme y sin chistes. Que sienta que decide él.",
+    cierres: ["doble", "comprob"], espanta: "Perder tiempo, las historias, la inseguridad y las técnicas obvias.",
+    riesgo: "Decide rápido y descarta rápido. Si en dos minutos no le diste un motivo, se acabó.",
+    rol: "Vas con prisa. Eres directo y seco, interrumpes, preguntas el precio muy pronto y quieres resultados concretos. No toleras rodeos ni que te digan qué hacer. Si el vendedor titubea o se extiende, lo cortas." },
+  { id: "flematico", n: "Flemático", eje: "Calma · números", voz: "rounded", persona: "Ernesto Luna",
+    senal: "Tranquilo y analítico. Te ofrece café, saca la calculadora y pregunta por el interés, el plazo y la letra chiquita.",
+    quiere: "Números claros, garantía y saber que a otros les fue bien. Compra tranquilidad.",
+    presenta: "Con calma y en orden, con comparativos y garantía por escrito. Contesta todo sin desesperarte. No lo presiones.",
+    cierres: ["franklin", "obj-dificil", "elimina"], espanta: "La prisa, la presión, el entusiasmo exagerado y las promesas sin respaldo.",
+    riesgo: "Si lo dejas ir a pensarlo, lo piensa seis meses. Dale todo dentro de la cita.",
+    rol: "Eres tranquilo y analítico. Preguntas por números, plazos, garantías y letra chiquita. Das pocas señales. La presión te congela y entonces dices que lo tienes que pensar. Sólo decides si te dan seguridad y datos claros." },
+  { id: "melancolico", n: "Melancólico", eje: "Calma · sentimientos", voz: "buttery", persona: "Sofía Navarro",
+    senal: "Sensible y detallista. Escucha con atención, te mira a los ojos y habla de su familia.",
+    quiere: "Que beneficie a quienes quiere y poder confiar en ti. Antes del producto, te compra a ti.",
+    presenta: "Con calidez y sinceridad. Pregunta por su familia y escucha de verdad. Dale tiempo.",
+    cierres: ["doble", "insinua"], espanta: "La frialdad, la prisa, la manipulación y los cambios bruscos.",
+    riesgo: "Le cuesta decir que no; a veces dice que sí por pena y luego se arrepiente.",
+    rol: "Eres sensible, reservado y detallista. Te importan tu familia y poder confiar en la persona. Te cuesta decir que no de frente, te asustan los cambios bruscos y la frialdad. Compras si sientes sinceridad y un beneficio para los tuyos." }
+]
+};
+
+</script>
+<script>
+(() => {
+'use strict';
+const D = window.DOJO;
+const LESSONS = D.LESSONS;
+LESSONS.forEach((l, i) => { l.i = i; });
+const LES = Object.fromEntries(LESSONS.map(l => [l.id, l]));
+const TIPO = Object.fromEntries(D.TIPOS.map(t => [t.id, t]));
+const NAMED = LESSONS.filter(l => ['prueba', 'maestro', 'tracy'].includes(l.k));
+const LIVE = l => ['prueba', 'maestro', 'tracy', 'obj'].includes(l.k);
+const KIND = { base: 'Fundamento', prueba: 'Cierre de prueba', maestro: 'Cierre maestro', tracy: 'Cierre de Tracy', obj: 'Objeción', post: 'Después del cierre' };
+const GOAL = 30;
+
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const pick = a => a[Math.floor(Math.random() * a.length)];
+const dayKey = (off = 0) => { const d = new Date(); d.setDate(d.getDate() + off); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+const norm = s => String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+
+/* ───────── estado y guardado ───────── */
+const KEY = 'dojo-cierres.v1';
+const DEF = { rev: 0, xp: 0, streak: 0, last: '', day: { d: '', xp: 0 }, done: {}, prod: '', voz: true, auto: true, nums: {}, sims: 0, best: 0 };
+let S = (() => { try { return Object.assign({}, DEF, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) { return Object.assign({}, DEF); } })();
+function localSave() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
+let cloudDoc = null, cloudBusy = false, cloudDirty = false, cloudTimer = 0;
+function save() { S.rev = Date.now(); localSave(); if (cloudDoc) { cloudDirty = true; clearTimeout(cloudTimer); cloudTimer = setTimeout(flush, 1500); } drawStats(); }
+async function flush() {
+  if (!cloudDoc || cloudBusy) return;
+  cloudBusy = true; cloudDirty = false;
+  try { await cloudDoc.set(JSON.parse(JSON.stringify(S))); } catch (e) { if (e && e.code !== 'unavailable') cloudDoc = null; }
+  cloudBusy = false;
+  if (cloudDirty && cloudDoc) { clearTimeout(cloudTimer); cloudTimer = setTimeout(flush, 1500); }
+}
+async function pull() {
+  if (!cloudDoc || cloudDirty || cloudBusy) return;
+  try {
+    const snap = await cloudDoc.get();
+    const r = snap.exists ? snap.data() : null;
+    if (r && Number(r.rev) > S.rev) { S = Object.assign({}, DEF, JSON.parse(JSON.stringify(r))); localSave(); drawStats(); if (!ses && !(sim && sim.on)) render(); }
+    else if (S.rev > 0 && (!r || S.rev > Number(r.rev))) { cloudDirty = true; flush(); }
+  } catch (e) {}
+}
+async function initCloud() {
+  try {
+    const c = window.claude; if (!c || !c.use) return;
+    const [db, user] = await Promise.all([c.use('db'), c.use('user')]);
+    if (!db || !user) return;
+    const uid = await user.id(); if (!uid) return;
+    cloudDoc = db.doc('data/users/' + uid + '/progreso');
+    await pull();
+  } catch (e) { cloudDoc = null; }
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden) pull(); });
+
+function streakNow() { return (S.last === dayKey() || S.last === dayKey(-1)) ? S.streak : 0; }
+function addXP(n) {
+  const t = dayKey();
+  if (S.last !== t) { S.streak = S.last === dayKey(-1) ? S.streak + 1 : 1; S.last = t; }
+  if (S.day.d !== t) S.day = { d: t, xp: 0 };
+  S.day.xp += n; S.xp += n;
+}
+const stampsOf = l => { const d = S.done[l.id] || {}; return (d.a ? 1 : 0) + (d.p ? 1 : 0) + (LIVE(l) && d.v ? 1 : 0); };
+const maxStamps = l => LIVE(l) ? 3 : 2;
+const unlocked = l => l.i === 0 || !!(S.done[LESSONS[l.i - 1].id] || {}).a;
+const nextLesson = () => LESSONS.find(l => !(S.done[l.id] || {}).a);
+
+/* ───────── capacidades: IA, voz, dictado ───────── */
+const caps = { sample: null, tts: null, dict: null, ready: false };
+let aiOff = false, ttsOff = false, micOff = false, dictLang = true, listening = false, micT = null, webRec = null;
+const WebRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+function markCaps() {
+  const b = document.body;
+  b.dataset.ai = !caps.ready ? 'wait' : (caps.sample && !aiOff ? 'on' : 'off');
+  b.toggleAttribute('data-mic', !micOff && (!!caps.dict || (caps.ready && !!WebRec)));
+}
+const capP = (async () => {
+  const c = window.claude;
+  if (c && c.use) {
+    const [s, t, d] = await Promise.all(['sample', 'tts', 'dictation'].map(n => c.use(n).catch(() => null)));
+    caps.sample = s; caps.tts = t; caps.dict = d;
+  }
+  caps.ready = true;
+  if (caps.dict) {
+    caps.dict.onFinal(({ text }) => { const t = micT && document.getElementById(micT); if (!t) return; t.value = t.value ? t.value + text : text.replace(/^\s+/, ''); setPartial(''); });
+    caps.dict.onPartial(({ text }) => setPartial(text));
+    caps.dict.onState(({ state, reason }) => { setListening(state !== 'idle'); if (state === 'idle' && reason === 'not_granted') { micOff = true; markCaps(); } });
+  }
+  markCaps();
+})();
+const aiReady = () => caps.ready && caps.sample && !aiOff;
+async function ask(input, opts, json) {
+  await capP;
+  if (!caps.sample || aiOff) throw { code: 'no_ai' };
+  try { return json ? await caps.sample.json(input, opts) : await caps.sample(input, opts); }
+  catch (e) {
+    if (e && ['not_granted', 'sampling_disabled', 'not_declared', 'capability_disabled'].includes(e.code)) { aiOff = true; markCaps(); }
+    throw e || { code: 'upstream_error' };
+  }
+}
+const errMsg = code => ({
+  rate_limited: 'Llegaste al límite de uso por ahora. Intenta de nuevo en unos minutos.',
+  session_expired: 'Tu sesión expiró. Vuelve a iniciar sesión en Claude.',
+  refused: 'Claude no pudo responder a eso. Cambia la frase e intenta de nuevo.',
+  no_ai: 'La IA no está disponible en esta vista.', not_granted: 'La IA no está permitida en esta vista.',
+  invalid_json: 'La respuesta llegó incompleta. Intenta de nuevo.', prompt_too_large: 'La conversación es demasiado larga. Empieza una nueva.'
+}[code] || 'Hubo un problema de conexión. Intenta de nuevo.');
+
+function say(text, voice, force) {
+  if ((!S.voz && !force) || !text) return;
+  text = String(text).slice(0, 1900);
+  if (caps.tts && !ttsOff) {
+    caps.tts.speak(text, { language: 'es', voice: voice || 'buttery' }).catch(e => { if (e && (e.code === 'not_granted' || e.code === 'unavailable')) ttsOff = true; });
+    return;
+  }
+  if (caps.ready && !caps.tts && !ttsOff && 'speechSynthesis' in window) {
+    try {
+      speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text); u.lang = 'es-MX';
+      const v = speechSynthesis.getVoices().find(x => /^es/i.test(x.lang)); if (v) u.voice = v;
+      speechSynthesis.speak(u);
+    } catch (e) {}
+  }
+}
+function hush() { try { if (caps.tts) caps.tts.stop().catch(() => {}); if ('speechSynthesis' in window) speechSynthesis.cancel(); } catch (e) {} }
+function setPartial(t) { const p = $('#partial'); if (p) p.textContent = t || ''; }
+function setListening(v) { listening = v; document.body.toggleAttribute('data-listening', v); if (!v) setPartial(''); }
+function afterMic(autoSend) { const t = micT && document.getElementById(micT); if (autoSend && S.auto && t && t.dataset.send && t.value.trim()) ACT[t.dataset.send](); }
+function micToggle(target) {
+  if (listening) {
+    if (caps.dict) caps.dict.stop().then(() => afterMic(true), () => {});
+    else if (webRec) { webRec._send = true; webRec.stop(); }
+    return;
+  }
+  micT = target; hush();
+  if (caps.dict) {
+    caps.dict.start(dictLang ? { language: 'es' } : undefined).catch(e => {
+      const c = e && e.code;
+      if (c === 'unavailable' && dictLang) { dictLang = false; toast('El dictado en español no está disponible aquí. Toca de nuevo para usar el idioma de tu cuenta.'); }
+      else if (c === 'not_granted' || c === 'unavailable') { micOff = true; markCaps(); toast('El micrófono no está permitido aquí. Usa el dictado de tu teclado.'); }
+      else if (c === 'rate_limited' || c === 'upstream_error') toast('El dictado falló. Intenta de nuevo.');
+    });
+    return;
+  }
+  if (!WebRec) return;
+  try {
+    const r = webRec = new WebRec(); r.lang = 'es-MX'; r.continuous = true; r.interimResults = true;
+    r.onresult = ev => {
+      const t = document.getElementById(micT); let interim = '';
+      for (let i = ev.resultIndex; i < ev.results.length; i++) {
+        const txt = ev.results[i][0].transcript;
+        if (ev.results[i].isFinal) { if (t) t.value = (t.value ? t.value.replace(/\s+$/, '') + ' ' : '') + txt.trim(); } else interim += txt;
+      }
+      setPartial(interim);
+    };
+    r.onerror = ev => { if (ev.error === 'not-allowed' || ev.error === 'service-not-allowed') { micOff = true; markCaps(); toast('El micrófono no está disponible aquí. Usa el dictado de tu teclado.'); } };
+    r.onend = () => { setListening(false); afterMic(!!r._send); };
+    r.start(); setListening(true);
+  } catch (e) { micOff = true; markCaps(); }
+}
+
+/* ───────── utilidades de interfaz ───────── */
+let toastT = 0;
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, 3800); }
+const ICON = {
+  mic: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>',
+  send: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
+  lock: '<svg class="lock" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>'
+};
+const sayBtn = (text, voice) => `<button class="say-btn" data-act="say" data-text="${esc(text)}" data-voice="${voice || ''}">Escuchar</button>`;
+const micBtn = target => `<button class="mic" data-act="mic" data-for="${target}" aria-label="Hablar">${ICON.mic}</button>`;
+const noMic = '<p class="no-mic">Para hablar en vez de escribir, usa el micrófono del teclado de tu celular.</p>';
+function drawStats() {
+  const nSt = LESSONS.reduce((n, l) => n + stampsOf(l), 0);
+  $('#stats').innerHTML = `<span><b>${streakNow()}</b> ${streakNow() === 1 ? 'día' : 'días'}</span><span><b>${S.xp}</b> XP</span><span><b>${nSt}</b> ${nSt === 1 ? 'sello' : 'sellos'}</span>`;
+}
+
+/* ───────── navegación ───────── */
+const VIEWS = ['ruta', 'simulador', 'objeciones', 'coach', 'guia'];
+let view = 'ruta';
+function go(v) { if (location.hash.slice(1) === v) render(); else location.hash = v; }
+function render() {
+  view = VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'ruta';
+  document.querySelectorAll('.tab').forEach(t => { if (t.dataset.v === view) t.setAttribute('aria-current', 'page'); else t.removeAttribute('aria-current'); });
+  const el = $('#view');
+  const chat = (view === 'simulador' && sim && sim.on && !sim.ev) || view === 'coach';
+  el.classList.toggle('chatmode', chat); el.classList.toggle('gut', !chat);
+  el.innerHTML = ({ ruta: vRuta, simulador: vSim, objeciones: vObj, coach: vCoach, guia: vGuia })[view]();
+  if (!chat) el.scrollTop = 0; else scrollMsgs();
+  drawStats();
+}
+window.addEventListener('hashchange', () => { hush(); render(); });
+
+/* ───────── vista: ruta ───────── */
+function vRuta() {
+  const nx = nextLesson(); const dxp = S.day.d === dayKey() ? S.day.xp : 0;
+  const allDone = LESSONS.reduce((n, l) => n + (stampsOf(l) === maxStamps(l) ? 1 : 0), 0);
+  let h = `<div class="wrap"><section class="today">
+    <div class="field"><p class="label">${nx ? 'Tu siguiente renglón' : 'Ruta completa'}</p>
+    <h1>${nx ? esc(nx.n) : 'Ahora, a dominarlos en vivo'}</h1>
+    <p class="small">${nx ? esc(KIND[nx.k]) + ' · ' + esc(nx.src) + '. Cinco minutos: aprendes la fórmula y la practicas.' : 'Dominaste ' + allDone + ' de ' + LESSONS.length + ' lecciones. Gana los sellos que faltan en el Simulador.'}</p></div>
+    <button class="btn wide" data-act="${nx ? 'lesson' : 'go'}" data-id="${nx ? nx.id : ''}" data-v="simulador">${nx ? (stampsOf(nx) ? 'Continuar' : 'Empezar lección') : 'Abrir el Simulador'}</button>
+    <div class="meter"><span>Meta de hoy: ${Math.min(dxp, GOAL)} / ${GOAL} XP</span><div class="bar"><i style="width:${Math.min(100, dxp / GOAL * 100)}%"></i></div></div>
+  </section>`;
+  D.UNITS.forEach((u, ui) => {
+    const ls = LESSONS.filter(l => l.u === ui); const dn = ls.filter(l => (S.done[l.id] || {}).a).length;
+    h += `<section class="unit"><header><div class="hrow"><p class="label">Unidad ${ui + 1} · ${esc(u.src)}</p><p class="label">${dn}/${ls.length}</p></div><h2>${esc(u.t)}</h2><p class="muted small">${esc(u.d)}</p></header><ol class="lines">`;
+    ls.forEach(l => {
+      const st = stampsOf(l), mx = maxStamps(l), open = unlocked(l), isNext = nx && nx.id === l.id;
+      const pips = Array.from({ length: mx }, (_, k) => `<span class="pip${k < st ? ' on' : ''}"></span>`).join('');
+      const end = st === mx ? '<span class="stamp">Dominado</span>' : st ? '<span class="stamp">Cerrado</span>' : open ? '<span class="go">Empezar</span>' : ICON.lock;
+      h += `<li class="line${isNext ? ' next' : ''}${open ? '' : ' locked'}"><button data-act="lesson" data-id="${l.id}"><span class="no">${String(l.i + 1).padStart(2, '0')}</span><span class="ti"><b>${esc(l.n)}</b><small>${l.num ? 'Cierre ' + l.num + ' · ' : ''}${esc(KIND[l.k])}</small></span><span class="end"><span class="pips" aria-label="${st} de ${mx} sellos">${pips}</span>${end}</span></button></li>`;
+    });
+    h += '</ol></section>';
+  });
+  return h + '<p class="muted small">Sellos por lección: aprendida, sin errores y usada en vivo en el Simulador.</p></div>';
+}
+
+/* ───────── motor de sesiones (lecciones y rondas) ───────── */
+let ses = null;
+const mkMC = (m, t = 'mc') => { const o = shuffle(m[1].map((x, k) => ({ x, ok: k === m[2] }))); return { t, q: m[0], o, e: m[3] || '', pickd: -1 }; };
+function mkBuild(l) {
+  const f = l.fr.filter(x => x.split(' ').length <= 14 && x.split(' ').length >= 4); if (!f.length) return null;
+  const words = pick(f).split(' ');
+  return { t: 'build', l, words, order: shuffle(words.map((_, i) => i)), sel: [] };
+}
+function mkCual(l) {
+  if (!NAMED.includes(l)) return null;
+  const others = shuffle(NAMED.filter(x => x.id !== l.id)).slice(0, 2);
+  const o = shuffle([{ x: l.n, ok: true }, ...others.map(x => ({ x: x.n, ok: false }))]);
+  return { t: 'cual', q: '¿Qué cierre es este?', quote: l.fr[l.fr.length - 1], o, e: l.idea.split('. ')[0] + '.', pickd: -1 };
+}
+const mkResp = (l, r, hint) => ({ t: 'resp', l, r, hint });
+function startLesson(id) {
+  const l = LES[id];
+  const ex = l.mc.map(m => mkMC(m));
+  const b = mkBuild(l); if (b) ex.splice(1, 0, b);
+  const c = mkCual(l); if (c) ex.splice(Math.min(3, ex.length), 0, c);
+  l.resp.forEach(r => ex.push(mkResp(l, r, true)));
+  ses = { kind: 'lesson', l, q: [{ t: 'learn', l }, ...ex], i: 0, st: 'ans', miss: 0, ok: 0 };
+  drawSes();
+}
+function startRonda() {
+  const open = LESSONS.filter(l => (S.done[l.id] || {}).a);
+  const pool = (open.length >= 3 ? open : LESSONS).flatMap(l => l.resp.filter(r => r.cl).map(r => mkResp(l, r, false)));
+  ses = { kind: 'ronda', q: shuffle(pool).slice(0, 5), i: 0, st: 'ans', miss: 0, ok: 0 };
+  drawSes(); speakItem();
+}
+function speakItem() { const it = ses && ses.q[ses.i]; if (it && it.t === 'resp' && it.r.cl) say(it.r.cl); }
+function learnHTML(l) {
+  const tag = l.lista ? 'ul' : 'ol';
+  return `<p class="label">${esc(l.src)} · ${l.num ? 'Cierre ' + l.num : esc(KIND[l.k])}</p><h1>${esc(l.n)}</h1><p class="lead">${esc(l.idea)}</p>
+  ${l.cuando ? `<div class="field"><span class="label">Cuándo</span><p>${esc(l.cuando)}</p></div>` : ''}
+  <div class="field"><span class="label">${l.lista ? 'En resumen' : 'Fórmula'}</span><${tag}>${l.f.map(x => `<li>${esc(x)}</li>`).join('')}</${tag}></div>
+  <div class="field"><span class="label">Dilo así</span>${l.fr.map(x => `<blockquote class="say"><span>«${esc(x)}»</span>${sayBtn(x)}</blockquote>`).join('')}</div>
+  <div class="warn field"><span class="label">Error común</span><p>${esc(l.err)}</p></div>
+  ${l.nota ? `<p class="note">${esc(l.nota)}</p>` : ''}`;
+}
+function drawSes() {
+  const it = ses.q[ses.i], fb = ses.st === 'fb'; let body = '', foot = '';
+  const main = (label, dis) => `<button class="btn pen wide" data-act="sesMain"${dis ? ' disabled' : ''}>${label}</button>`;
+  if (it.t === 'learn') { body = learnHTML(it.l); foot = main('Practicar'); }
+  else if (it.t === 'mc' || it.t === 'cual') {
+    body = `<p class="label">${it.t === 'cual' ? 'Reconoce el cierre' : 'Elige la mejor respuesta'}</p><h2 class="q">${esc(it.q)}</h2>${it.quote ? `<blockquote class="say"><span>«${esc(it.quote)}»</span></blockquote>` : ''}
+    <div class="opts">${it.o.map((o, k) => `<button class="opt${fb && o.ok ? ' right' : fb && k === it.pickd ? ' wrong' : ''}" data-act="opt" data-k="${k}" aria-pressed="${k === it.pickd}"${fb ? ' disabled' : ''}>${esc(o.x)}</button>`).join('')}</div>`;
+    if (fb) body += `<div class="fb ${it.good ? 'ok' : 'bad'}"><p class="t">${it.good ? 'Correcto' : 'Todavía no'}</p><p>${esc(it.e)}</p></div>`;
+    foot = main(fb ? 'Continuar' : 'Comprobar', !fb && it.pickd < 0);
+  } else if (it.t === 'build') {
+    body = `<p class="label">Arma la frase · ${esc(it.l.n)}</p><h2 class="q">Toca las palabras en orden</h2>
+    <div class="sigline">${it.sel.map((w, k) => `<button class="word" data-act="unword" data-k="${k}"${fb ? ' disabled' : ''}>${esc(it.words[w])}</button>`).join('')}</div>
+    <div class="bank">${it.order.map(w => `<button class="word" data-act="word" data-k="${w}"${it.sel.includes(w) || fb ? ' disabled' : ''}>${esc(it.words[w])}</button>`).join('')}</div>`;
+    if (fb) body += `<div class="fb ${it.good ? 'ok' : 'bad'}"><p class="t">${it.good ? 'Así se dice' : 'El orden correcto'}</p><p>«${esc(it.words.join(' '))}» ${sayBtn(it.words.join(' '))}</p></div>`;
+    foot = main(fb ? 'Continuar' : 'Comprobar', !fb && it.sel.length < it.words.length);
+  } else {
+    const r = it.r;
+    body = `<p class="label">${it.hint ? 'Tu turno · ' + esc(it.l.n) : 'Responde la objeción'}</p>
+    ${r.ctx ? `<p class="lead">${esc(r.ctx)}</p>` : ''}
+    ${r.cl ? `<div class="bub c"><span class="who">Cliente</span>«${esc(r.cl)}» ${sayBtn(r.cl)}</div>` : ''}`;
+    if (ses.st === 'ans' || ses.st === 'busy') {
+      body += `<div class="field"><div class="composer"><textarea class="inp" id="ans" rows="3" placeholder="Escribe o di lo que le responderías"${ses.st === 'busy' ? ' disabled' : ''}>${esc(it.ans || '')}</textarea>${micBtn('ans')}</div><p class="partial" id="partial"></p>${noMic}</div>
+      ${!it.hint ? `<details class="acc"><summary>Dame una pista</summary><div class="in"><p>Prueba con: <b>${esc(it.l.n)}</b>. ${esc(it.l.f[0])}</p></div></details>` : ''}`;
+      foot = main(ses.st === 'busy' ? 'Calificando…' : 'Comprobar', ses.st === 'busy');
+    } else {
+      const g = it.g;
+      body += `<div class="bub v"><span class="who">Tú</span>${esc(it.ans)}</div>`;
+      if (g) body += `<div class="fb ${it.good ? 'ok' : 'bad'}"><p class="t">${it.good ? 'Bien respondido' : 'Se puede mejorar'}${g.nota ? ' · ' + esc(g.nota) + '/5' : ''}</p>${g.bien ? `<p>${esc(g.bien)}</p>` : ''}${g.mejora ? `<p>${esc(g.mejora)}</p>` : ''}${g.version ? `<p><span class="label">Tu respuesta, pulida</span><br>«${esc(g.version)}»</p>` : ''}</div>`;
+      body += `<div class="sheet"><div class="field"><span class="label">Respuesta modelo · ${esc(it.l.n)}</span><p>«${esc(r.m)}» ${sayBtn(r.m)}</p></div><div class="field"><span class="label">Qué debe tener</span><p class="muted">${esc(r.c)}</p></div></div>`;
+      if (ses.st === 'self') { body += '<p class="lead">Compara con el modelo. ¿Cómo te fue?</p>'; foot = `<div class="row"><button class="btn" data-act="self" data-v="0">Todavía no</button><button class="btn" data-act="self" data-v="1">Casi</button><button class="btn pen" data-act="self" data-v="2">La clavé</button></div>`; }
+      else foot = main('Continuar');
+    }
+  }
+  const p = $('#player'); p.hidden = false;
+  p.innerHTML = `<div class="p-head gut"><button class="x" data-act="sesClose" aria-label="Salir">×</button><div class="bar" role="progressbar" aria-valuenow="${ses.i}" aria-valuemax="${ses.q.length}"><i style="width:${ses.i / ses.q.length * 100}%"></i></div></div>
+  <div class="p-body gut"><div class="wrap">${body}</div></div><div class="p-foot gut"><div class="wrap">${foot}</div></div>`;
+  $('.p-body', p).scrollTop = fb ? 1e6 : 0;
+}
+function settle(it, good) {
+  it.good = good;
+  if (good) ses.ok++; else { ses.miss++; if (!it.re) ses.q.push(redo(it)); }
+}
+function redo(it) {
+  if (it.t === 'resp') return { t: 'resp', l: it.l, r: it.r, hint: it.hint, re: true };
+  if (it.t === 'build') return { t: 'build', l: it.l, words: it.words, order: shuffle(it.order), sel: [], re: true };
+  return { t: it.t, q: it.q, quote: it.quote, o: shuffle(it.o), e: it.e, pickd: -1, re: true };
+}
+async function sesMain() {
+  const it = ses.q[ses.i];
+  if (it.t === 'learn' || ses.st === 'fb') return sesNext();
+  if (ses.st !== 'ans') return;
+  if (it.t === 'mc' || it.t === 'cual') { settle(it, it.o[it.pickd].ok); ses.st = 'fb'; return drawSes(); }
+  if (it.t === 'build') { settle(it, it.sel.map(w => it.words[w]).join(' ') === it.words.join(' ')); ses.st = 'fb'; return drawSes(); }
+  const txt = ($('#ans').value || '').trim();
+  if (txt.length < 3) return toast('Escribe o di tu respuesta primero.');
+  if (listening) micToggle();
+  it.ans = txt; hush();
+  if (!aiReady() && caps.ready) { ses.st = 'self'; return drawSes(); }
+  ses.st = 'busy'; drawSes();
+  const mine = ses;
+  try {
+    const g = await ask(`Eres entrenador de ventas (métodos de Brian Tracy y Alex Dey) y calificas una respuesta de práctica.
+Técnica a practicar: ${it.l.n}. Fórmula: ${it.l.f.join(' ')}
+${it.r.ctx ? 'Situación: ' + it.r.ctx + '\n' : ''}${it.r.cl ? 'El cliente dijo: «' + it.r.cl + '»\n' : ''}Criterio para aprobar: ${it.r.c}
+Respuesta modelo (referencia, no hay que copiarla): «${it.r.m}»
+Respuesta del alumno: «${txt}»
+Devuelve SOLO un objeto JSON: {"ok": true o false, "nota": entero de 1 a 5, "bien": "qué hizo bien, 1 frase", "mejora": "qué cambiar, 1 frase", "version": "la respuesta del alumno mejorada, 1 o 2 frases"}
+ok es true si cumple el criterio aunque use otras palabras u otro producto. Tutea al alumno. Español.`, { modelTier: 'quick', cache: false }, true);
+    if (ses !== mine) return;
+    it.g = { nota: Number(g.nota) || '', bien: g.bien || '', mejora: g.mejora || '', version: g.version || '' };
+    settle(it, !!g.ok); ses.st = 'fb';
+  } catch (e) {
+    if (ses !== mine) return;
+    if (e.code && !['no_ai', 'not_granted', 'sampling_disabled'].includes(e.code)) toast(errMsg(e.code));
+    ses.st = 'self';
+  }
+  drawSes();
+}
+function sesNext() {
+  hush(); ses.i++; ses.st = 'ans';
+  if (ses.i >= ses.q.length) return sesFinish();
+  drawSes(); speakItem();
+}
+function sesFinish() {
+  let xp, html; const p = $('#player');
+  if (ses.kind === 'lesson') {
+    const l = ses.l, d = S.done[l.id] || (S.done[l.id] = {}), first = !d.a;
+    d.a = 1; if (ses.miss === 0) d.p = 1;
+    xp = (first ? 15 : 5) + (ses.miss === 0 ? 5 : 0); addXP(xp); save();
+    const nx = LESSONS[l.i + 1];
+    html = `<span class="stamp big">${stampsOf(l) === maxStamps(l) ? 'Dominado' : 'Cerrado'}</span><h1>${esc(l.n)}</h1><p class="lead">+${xp} XP · ${stampsOf(l)} de ${maxStamps(l)} sellos</p>
+    ${!d.p ? '<p class="muted">Repítela sin errores para ganar el segundo sello.</p>' : ''}
+    ${LIVE(l) && !d.v ? '<p class="muted">El tercer sello se gana usándolo bien frente a un cliente en el Simulador.</p>' : ''}
+    <div class="row" style="justify-content:center">${LIVE(l) && !d.v ? `<button class="btn" data-act="reto" data-id="${l.id}">Practicar en vivo</button>` : ''}${nx ? `<button class="btn pen" data-act="lesson" data-id="${nx.id}">Siguiente: ${esc(nx.n)}</button>` : ''}<button class="btn" data-act="sesClose">Volver a la ruta</button></div>`;
+  } else {
+    xp = ses.ok * 3 + 2; addXP(xp); save();
+    html = `<span class="stamp big">${ses.ok} de 5</span><h1>Ronda terminada</h1><p class="lead">+${xp} XP</p><div class="row" style="justify-content:center"><button class="btn pen" data-act="ronda">Otra ronda</button><button class="btn" data-act="sesClose">Salir</button></div>`;
+  }
+  ses.st = 'end';
+  p.innerHTML = `<div class="p-head gut"><button class="x" data-act="sesClose" aria-label="Salir">×</button><div class="bar"><i style="width:100%"></i></div></div><div class="p-body gut"><div class="wrap done">${html}</div></div><div></div>`;
+}
+function sesClose() { hush(); if (listening) micToggle(); ses = null; const p = $('#player'); p.hidden = true; p.innerHTML = ''; render(); }
+
+/* ───────── vista: objeciones ───────── */
+function vObj() {
+  const n = LESSONS.reduce((k, l) => k + l.resp.filter(r => r.cl).length, 0);
+  return `<div class="wrap"><section class="sheet"><div class="field"><p class="label">Ronda rápida</p><h1>El cliente dispara, tú respondes</h1>
+  <p class="muted">Cinco objeciones al azar de las ${n} del curso. Escuchas al cliente, respondes con tu voz o por escrito y recibes la corrección con la respuesta modelo.</p></div>
+  <button class="btn pen wide" data-act="ronda">Empezar ronda de 5</button>
+  <p class="note if-ai-off">Sin la IA de Claude, tú mismo comparas tu respuesta con el modelo y te calificas.</p></section>
+  <section class="field"><p class="label">Objeciones del curso</p>${LESSONS.filter(l => l.k === 'obj').map(l => `<details class="acc"><summary>${esc(l.n)}</summary><div class="in"><p>${esc(l.idea)}</p><ol>${l.f.map(x => `<li>${esc(x)}</li>`).join('')}</ol><p>«${esc(l.resp[0].m)}» ${sayBtn(l.resp[0].m)}</p></div></details>`).join('')}</section></div>`;
+}
+
+/* ───────── vista: simulador ───────── */
+let sim = null;
+const cfg = { tipo: 'sorpresa', dif: 'normal', etapa: 'cierre', foco: '' };
+const ETAPA = {
+  cierre: ['Cerrar la venta', 'Ya escuchaste la presentación del vendedor y te interesó a medias. Ahora él intenta cerrar la venta.'],
+  cita: ['Conseguir la cita', 'El vendedor te llama por teléfono en frío para pedirte una cita. No lo conoces y estás ocupado.'],
+  completa: ['Cita completa', 'El vendedor acaba de llegar a su cita contigo. Empieza desde el saludo; todavía no sabes bien qué ofrece.']
+};
+const DIF = {
+  facil: ['Fácil', 'Pon una sola objeción y cede cuando el vendedor responda de forma razonable.'],
+  normal: ['Normal', 'Pon dos o tres objeciones distintas, una a la vez. Cede sólo ante buenas respuestas.'],
+  dificil: ['Difícil', 'Pon al menos cuatro objeciones. Guarda una objeción oculta (por ejemplo, el dinero) que sólo dices si te preguntan bien. Compra sólo si el vendedor usa técnicas claras de cierre y mantiene la calma.']
+};
+function vSim() {
+  if (sim && sim.ev) return evalHTML();
+  if (sim && sim.on) return simChatHTML();
+  const chip = (g, v, t) => `<button class="chip" data-act="cfg" data-g="${g}" data-v="${v}" aria-pressed="${cfg[g] === v}">${t}</button>`;
+  return `<div class="wrap"><section class="sheet">
+  <div class="field"><p class="label">Ficha de la cita</p><h1>Vende frente a un cliente</h1><p class="muted">Claude hace de cliente y te pone objeciones. Tú hablas o escribes. Al final, tu entrenador revisa la cita y te dice qué cierres usaste y qué decir mejor.</p></div>
+  <p class="note if-ai-off">El Simulador necesita la IA de Claude, que no está disponible en esta vista. Ábrelo desde claude.ai y permite que la app use Claude. Mientras tanto, practica en Objeciones.</p>
+  <div class="field"><label class="label" for="prod">¿Qué vendes?</label><input class="inp" id="prod" value="${esc(S.prod)}" placeholder="Ejemplo: seguros de vida para familias jóvenes" autocomplete="off"></div>
+  <div class="field"><span class="label">Cliente</span><div class="chips">${chip('tipo', 'sorpresa', 'Sorpresa')}${D.TIPOS.map(t => chip('tipo', t.id, t.n)).join('')}</div></div>
+  <div class="field"><span class="label">Situación</span><div class="chips">${Object.keys(ETAPA).map(k => chip('etapa', k, ETAPA[k][0])).join('')}</div></div>
+  <div class="field"><span class="label">Dificultad</span><div class="chips">${Object.keys(DIF).map(k => chip('dif', k, DIF[k][0])).join('')}</div></div>
+  <div class="field"><label class="label" for="foco">Quiero practicar</label><select class="inp" id="foco" data-change="foco"><option value="">Cita libre</option>${LESSONS.filter(LIVE).map(l => `<option value="${l.id}"${cfg.foco === l.id ? ' selected' : ''}>${l.num ? 'Cierre ' + l.num + ': ' : ''}${esc(l.n)}</option>`).join('')}</select></div>
+  <button class="btn pen wide if-ai-on" data-act="simStart">Empezar la cita</button></section>
+  <p class="muted small">Citas terminadas: ${S.sims} · Mejor puntaje: ${S.best}/100. Con «Sorpresa», al final te digo qué tipo de cliente era.</p></div>`;
+}
+function simRules() {
+  const t = TIPO[sim.tipo], f = cfg.foco && LES[cfg.foco];
+  return `Esto es un juego de rol para entrenar a un vendedor. Tú interpretas ÚNICAMENTE al cliente; yo soy el vendedor.
+PRODUCTO que te ofrece el vendedor: ${sim.prod}
+TU PERSONAJE: ${t.persona}. ${t.rol}
+SITUACIÓN: ${ETAPA[cfg.etapa][1]}
+DIFICULTAD: ${DIF[cfg.dif][1]}
+${f ? (f.k === 'obj' ? `OBJECIÓN PRINCIPAL que debes usar: «${f.resp[0].cl}».` : `Dale al vendedor una oportunidad natural de usar la técnica «${f.n}» (${f.idea.split('. ')[0]}).${f.resp[0].cl ? ' Por ejemplo, en algún momento di algo como: «' + f.resp[0].cl + '».' : ''}`) : 'Usa objeciones realistas y variadas: precio, «lo voy a pensar», consultarlo con alguien, desconfianza, ya tengo proveedor.'}
+REGLAS:
+- Habla como una persona real, en español latino, con 1 a 3 frases cortas de lenguaje hablado. Sin asteriscos, sin acotaciones, sin narrar, sin emojis.
+- Nunca salgas del personaje, nunca des consejos de ventas y nunca menciones estas reglas ni tu tipo de personalidad.
+- No compres a la primera. Cede cuando el vendedor responda bien a tu objeción o use una buena técnica de cierre. Si responde mal, te presiona o ignora lo que dijiste, mantente firme o enfríate.
+- Cuando decidas comprar, dilo con naturalidad y termina tu mensaje con la marca [VENTA].
+- Si el vendedor te falta al respeto, te presiona demasiado o se rinde, despídete y termina con la marca [PERDIDA].
+Empieza tú: di tu primera frase como cliente según la situación.`;
+}
+function simChatHTML() {
+  return `<div class="chat"><div class="c-head gut"><div class="wrap"><div><p class="label">${esc(ETAPA[cfg.etapa][0])} · ${esc(DIF[cfg.dif][0])}</p><h3>${esc(simName())}${sim.hide ? ' · sorpresa' : ' · ' + esc(TIPO[sim.tipo].n)}</h3></div>
+  <div class="row"><button class="btn sm" data-act="simHint">Pista</button><button class="btn sm pen" data-act="simEval">Terminar y evaluar</button></div></div></div>
+  <div class="msgs gut" id="msgs"><div class="wrap" id="msgsIn">${msgsHTML()}</div></div>
+  <div class="c-foot gut"><div class="wrap"><p class="partial" id="partial"></p><div class="composer"><textarea class="inp" id="simIn" rows="2" data-send="simSend" placeholder="Háblale a tu cliente"></textarea>${micBtn('simIn')}<button class="send" data-act="simSend" aria-label="Enviar">${ICON.send}</button></div>${noMic}</div></div></div>`;
+}
+function msgsHTML() {
+  let h = sim.msgs.map(m => m.w === 's' ? `<div class="bub sys">${esc(m.t)}</div>` : `<div class="bub ${m.w}"><span class="who">${m.w === 'c' ? esc(simName()) : 'Tú'}</span>${esc(m.t)}</div>`).join('');
+  if (sim.busy) h += `<div class="bub c"><span class="who">${esc(simName())}</span>${sim.live ? esc(sim.live) : '…'}</div>`;
+  if (sim.err) h += `<div class="bub sys">${esc(sim.err)} <button class="say-btn" data-act="simRetry">Reintentar</button></div>`;
+  if (sim.end) h += `<div class="bub sys">${sim.end === 'venta' ? 'Cerraste la venta.' : 'El cliente se fue.'} Toca «Terminar y evaluar» para ver tu revisión.</div>`;
+  return h;
+}
+function scrollMsgs() { const m = $('#msgs'); if (m) m.scrollTop = m.scrollHeight; }
+function drawMsgs() { const el = $('#msgsIn'); if (!el || view !== 'simulador') return; el.innerHTML = msgsHTML(); scrollMsgs(); }
+const simName = () => sim.hide ? 'Tu cliente' : TIPO[sim.tipo].persona;
+const cleanLine = t => String(t).replace(/\[(VENTA|PERDIDA)\]?/gi, '').replace(/\[[A-Z]*$/, '').replace(/\*/g, '').trim();
+async function clientTurn() {
+  const mine = sim; sim.busy = true; sim.err = ''; sim.live = ''; drawMsgs();
+  sim.ctl = new AbortController();
+  try {
+    const { text } = await ask(sim.turns, { cache: false, modelTier: 'quick', signal: sim.ctl.signal, onText: ({ text }) => { if (sim === mine) { sim.live = cleanLine(text); drawMsgs(); } } });
+    if (sim !== mine) return;
+    const m = /\[(VENTA|PERDIDA)\]/i.exec(text); if (m) sim.end = m[1].toLowerCase();
+    const line = cleanLine(text) || '…';
+    sim.turns.push({ role: 'assistant', content: text }); sim.msgs.push({ w: 'c', t: line });
+    sim.busy = false; sim.live = ''; drawMsgs(); say(line, TIPO[sim.tipo].voz);
+  } catch (e) {
+    if (sim !== mine) return;
+    sim.busy = false; sim.live = '';
+    if (e.code !== 'cancelled') sim.err = errMsg(e.code);
+    drawMsgs();
+  }
+}
+function simStart() {
+  const prod = ($('#prod').value || '').trim();
+  if (prod.length < 3) { $('#prod').focus(); return toast('Escribe primero qué vendes.'); }
+  if (prod !== S.prod) { S.prod = prod; save(); }
+  sim = { on: true, prod, hide: cfg.tipo === 'sorpresa', tipo: cfg.tipo === 'sorpresa' ? pick(D.TIPOS).id : cfg.tipo, turns: [], msgs: [], busy: false, end: '', err: '', live: '', ev: null };
+  sim.turns.push({ role: 'user', content: simRules() });
+  render(); clientTurn();
+}
+function simSend() {
+  const el = $('#simIn'); if (!el || !sim || sim.busy) return;
+  const txt = el.value.trim(); if (!txt) return;
+  if (sim.err) { sim.err = ''; }
+  hush(); el.value = '';
+  sim.msgs.push({ w: 'v', t: txt });
+  const last = sim.turns[sim.turns.length - 1];
+  if (last.role === 'user' && sim.turns.length > 1) last.content += '\n' + txt; else sim.turns.push({ role: 'user', content: 'VENDEDOR: ' + txt });
+  clientTurn();
+}
+const transcript = () => sim.msgs.filter(m => m.w !== 's').map(m => (m.w === 'c' ? 'CLIENTE: ' : 'VENDEDOR: ') + m.t).join('\n');
+const techList = () => LESSONS.filter(LIVE).map(l => `${l.id}: ${l.n} (${l.src}) — ${l.f.join(' ')}`).join('\n');
+async function simHint() {
+  if (!sim || sim.busy || sim.hinting) return;
+  sim.hinting = true; sim.msgs.push({ w: 's', t: 'Pensando una pista…' }); drawMsgs();
+  const slot = sim.msgs[sim.msgs.length - 1], mine = sim;
+  try {
+    const { text } = await ask(`Eres entrenador de ventas (Brian Tracy y Alex Dey). Tu alumno está a media práctica vendiendo: ${sim.prod}.
+Técnicas disponibles:\n${techList()}\n\nConversación hasta ahora:\n${transcript()}\n
+Dale UNA pista para su siguiente frase: el nombre de la técnica y una frase modelo de máximo 25 palabras adaptada a su producto. Texto plano, dos líneas, sin markdown.`, { modelTier: 'quick', cache: false });
+    slot.t = 'Pista: ' + text.replace(/\*/g, '').trim();
+  } catch (e) { slot.t = errMsg(e.code); }
+  mine.hinting = false; if (sim === mine) drawMsgs();
+}
+async function simEval() {
+  if (!sim) return;
+  if (!sim.msgs.some(m => m.w === 'v')) return toast('Dile algo a tu cliente antes de evaluar.');
+  if (sim.ctl) sim.ctl.abort(); hush(); if (listening) micToggle();
+  sim.ev = { wait: true }; render();
+  const mine = sim, t = TIPO[sim.tipo], f = cfg.foco && LES[cfg.foco];
+  try {
+    const r = await ask(`Eres un entrenador de ventas experto en los métodos de Brian Tracy y Alex Dey. Evalúa al VENDEDOR en esta práctica de juego de rol. Sé exigente y concreto; tutéalo.
+Producto: ${sim.prod}. Situación: ${ETAPA[cfg.etapa][0]}. El cliente era de tipo ${t.n} (${t.eje}).${f ? ' El alumno quería practicar: ' + f.n + '.' : ''}
+Resultado marcado por el cliente: ${sim.end || 'la cita quedó abierta'}.
+TÉCNICAS DE REFERENCIA (id: nombre — fórmula):
+${techList()}
+TRANSCRIPCIÓN:
+${transcript()}
+Devuelve SOLO un objeto JSON con esta forma:
+{"puntaje": entero 0-100, "resumen": "2 frases", "tecnicas": [{"id": "id de la lista", "bien": true o false, "cita": "frase del vendedor"}], "aciertos": ["..."], "mejoras": ["..."], "mejor_frase": {"cliente": "lo que dijo el cliente", "dijiste": "lo que respondió el vendedor", "prueba": "frase modelo mejor, adaptada al producto"}, "adaptacion": "cómo se adaptó al tipo de cliente, 1 frase", "siguiente": "qué practicar ahora, 1 frase"}
+Reglas: en "tecnicas" incluye sólo técnicas de la lista que el vendedor realmente intentó, con su id exacto. Máximo 3 aciertos y 3 mejoras. Considera: síes pequeños antes del cierre, si pidió la venta, manejo de objeciones sin discutir, silencio después de cerrar, adaptación al tipo de cliente y honestidad (penaliza mentiras o urgencias falsas).`, { cache: false }, true);
+    if (sim !== mine) return;
+    const score = Math.max(0, Math.min(100, Math.round(Number(r.puntaje) || 0)));
+    const tec = (Array.isArray(r.tecnicas) ? r.tecnicas : []).filter(x => x && LES[x.id]);
+    let xp = Math.round(score / 5) + (sim.end === 'venta' ? 10 : 0); const won = [];
+    if (score >= 70) tec.forEach(x => { const d = S.done[x.id]; if (x.bien && d && d.a && !d.v) { d.v = 1; won.push(LES[x.id].n); } });
+    S.sims++; S.best = Math.max(S.best, score); addXP(xp); save();
+    sim.ev = { score, r, tec, xp, won };
+  } catch (e) { if (sim !== mine) return; sim.ev = { fail: errMsg(e.code) }; }
+  if (view === 'simulador') render();
+}
+function evalHTML() {
+  const e = sim.ev, t = TIPO[sim.tipo];
+  if (e.wait) return `<div class="wrap"><section class="sheet"><p class="label">Revisión</p><h1>Tu entrenador está revisando la cita…</h1><p class="muted">Puede tardar hasta un minuto.</p></section></div>`;
+  if (e.fail) return `<div class="wrap"><section class="sheet"><h1>No se pudo evaluar</h1><p>${esc(e.fail)}</p><div class="row"><button class="btn pen" data-act="simEval">Reintentar</button><button class="btn" data-act="simBack">Volver a la cita</button><button class="btn" data-act="simNew">Salir</button></div></section></div>`;
+  const r = e.r, li = a => (Array.isArray(a) ? a : []).slice(0, 3).map(x => `<li>${esc(x)}</li>`).join(''), mf = r.mejor_frase || {};
+  return `<div class="wrap"><section class="sheet">
+  <div class="row" style="justify-content:space-between"><div><p class="label">Puntaje de la cita</p><p class="score">${e.score}<small>/100</small></p></div><span class="stamp big">${sim.end === 'venta' ? 'Venta cerrada' : sim.end === 'perdida' ? 'Venta perdida' : 'Sin cierre'}</span></div>
+  <p class="lead">${esc(r.resumen || '')}</p><p class="muted">+${e.xp} XP · Tu cliente era <b>${esc(t.n)}</b> (${esc(t.eje.toLowerCase())}). ${esc(r.adaptacion || '')}</p>
+  ${e.won.length ? `<p class="fb ok"><span class="t">Sello «en vivo» ganado</span>${esc(e.won.join(', '))}</p>` : ''}
+  ${e.tec.length ? `<div class="field"><span class="label">Técnicas que intentaste</span><div class="tech">${e.tec.map(x => `<span class="tag ${x.bien ? 'ok' : 'bad'}">${esc(LES[x.id].n)} · ${x.bien ? 'bien' : 'a pulir'}</span>`).join('')}</div></div>` : '<p class="note">No detecté ninguna técnica de cierre del curso. En la próxima cita, elige una y úsala a propósito.</p>'}
+  <div class="field"><span class="label">Lo que hiciste bien</span><ul>${li(r.aciertos)}</ul></div>
+  <div class="field"><span class="label">Lo que te costó la venta</span><ul>${li(r.mejoras)}</ul></div>
+  ${mf.prueba ? `<div class="field"><span class="label">La frase que cambiaría</span>${mf.cliente ? `<p class="muted">Cliente: «${esc(mf.cliente)}»</p>` : ''}${mf.dijiste ? `<p class="muted">Dijiste: «${esc(mf.dijiste)}»</p>` : ''}<blockquote class="say"><span>«${esc(mf.prueba)}»</span>${sayBtn(mf.prueba)}</blockquote></div>` : ''}
+  ${r.siguiente ? `<p class="note"><b>Siguiente paso:</b> ${esc(r.siguiente)}</p>` : ''}
+  <div class="row"><button class="btn pen" data-act="simAgain">Repetir este cliente</button><button class="btn" data-act="simNew">Otra cita</button></div></section></div>`;
+}
+
+/* ───────── vista: coach ───────── */
+const coach = { turns: [], msgs: [], busy: false, live: '', ctl: null };
+const SUG = ['El cliente dice «está muy caro». ¿Qué respondo?', '«Lo tengo que consultar con mi esposa»', '¿Qué cierre uso con un cliente que va con prisa?', '¿Cómo pido referidos sin pena?'];
+function coachRules() {
+  const kb = LESSONS.map(l => `• ${l.n} [${l.src}; ${KIND[l.k]}]: ${l.idea} Pasos: ${l.f.join(' ')} Ejemplo: «${l.resp[0].m}» Error: ${l.err}`).join('\n');
+  const tipos = D.TIPOS.map(t => `• ${t.n} (${t.eje}): ${t.senal} Quiere: ${t.quiere} Cierres: ${t.cierres.map(c => LES[c].n).join(', ')}. Lo espanta: ${t.espanta}`).join('\n');
+  return `Eres «Coach», el entrenador de ventas dentro de una app de práctica de cierres. Enseñas con dos métodos: la psicología de ventas de Brian Tracy y los cierres de Alex Dey. Respondes en español latino, de tú, directo y práctico.
+El alumno vende: ${S.prod || 'todavía no lo dice; si hace falta para el ejemplo, pregúntaselo'}.
+CÓMO RESPONDER:
+- Si pregunta qué responder cuando el cliente dice algo: 1) nombra la técnica y de quién es, 2) da el guion palabra por palabra adaptado a su producto, 3) di qué hacer si el cliente insiste. Máximo 150 palabras.
+- Texto plano con saltos de línea. Sin markdown, sin asteriscos, sin encabezados.
+- Apóyate primero en la GUÍA. Si agregas algo que no está en la guía, preséntalo como sugerencia tuya. No inventes citas textuales ni estadísticas de los autores.
+- Vende con ética: nada de mentiras, casos inventados ni urgencias falsas.
+GUÍA DE TÉCNICAS:
+${kb}
+TIPOS DE CLIENTE:
+${tipos}
+A continuación viene la conversación con el alumno.`;
+}
+function vCoach() {
+  return `<div class="chat"><div class="c-head gut"><div class="wrap"><div><p class="label">Tracy + Dey</p><h3>Pregúntale al coach</h3></div>${coach.msgs.length ? '<button class="btn sm" data-act="coachClear">Nueva conversación</button>' : ''}</div></div>
+  <div class="msgs gut" id="msgs"><div class="wrap" id="coachIn">${coachMsgs()}</div></div>
+  <div class="c-foot gut"><div class="wrap"><p class="partial" id="partial"></p><div class="composer"><textarea class="inp" id="coachQ" rows="2" data-send="coachSend" placeholder="Si el cliente me dice…, ¿qué respondo?"></textarea>${micBtn('coachQ')}<button class="send" data-act="coachSend" aria-label="Preguntar">${ICON.send}</button></div>${noMic}</div></div></div>`;
+}
+function coachMsgs() {
+  if (!coach.msgs.length) return `<div class="bub c"><span class="who">Coach</span>Dime qué te dijo el cliente o en qué parte de la venta te atoras, y te doy la técnica y las palabras exactas.<span class="if-ai-off"> Sin la IA de Claude te respondo con lo que hay en la guía del curso.</span></div><div class="chips">${SUG.map(s => `<button class="chip" data-act="coachSug" data-q="${esc(s)}">${esc(s)}</button>`).join('')}</div>`;
+  let h = coach.msgs.map(m => `<div class="bub ${m.w}"><span class="who">${m.w === 'c' ? 'Coach' : 'Tú'}</span>${esc(m.t)}${m.w === 'c' ? ' ' + sayBtn(m.t) : ''}</div>`).join('');
+  if (coach.busy) h += `<div class="bub c"><span class="who">Coach</span>${coach.live ? esc(coach.live) : 'Pensando…'}</div>`;
+  return h;
+}
+function drawCoach() { const el = $('#coachIn'); if (!el || view !== 'coach') return; el.innerHTML = coachMsgs(); scrollMsgs(); }
+function localCoach(q) {
+  const ws = norm(q).split(/[^a-zñ]+/).filter(w => w.length > 3);
+  const scored = LESSONS.map(l => { const hay = norm(l.n + ' ' + (l.tags || '') + ' ' + l.resp.map(r => r.cl || '').join(' ') + ' ' + l.idea); return [ws.reduce((n, w) => n + (hay.includes(w) ? (norm(l.n + ' ' + (l.tags || '')).includes(w) ? 3 : 1) : 0), 0), l]; }).filter(x => x[0] > 0).sort((a, b) => b[0] - a[0]).slice(0, 2);
+  if (!scored.length) return 'No encontré eso en la guía. Prueba con palabras como «caro», «pensar», «consultar», «referidos» o el nombre de un cierre.';
+  return scored.map(([, l]) => `${l.n} (${l.src})\n${l.f.map((x, i) => (i + 1) + '. ' + x).join('\n')}\nDilo así: «${l.resp[0].m}»`).join('\n\n');
+}
+async function coachSend(pre) {
+  const el = $('#coachQ'); const q = (typeof pre === 'string' ? pre : el ? el.value : '').trim();
+  if (!q || coach.busy) return;
+  if (el) el.value = ''; hush();
+  coach.msgs.push({ w: 'v', t: q });
+  if (caps.ready && !aiReady()) { coach.msgs.push({ w: 'c', t: localCoach(q) }); return render(); }
+  coach.turns.push({ role: 'user', content: q }); coach.busy = true; coach.live = '';
+  if (coach.msgs.length === 1) render(); else drawCoach();
+  coach.ctl = new AbortController();
+  try {
+    const { text } = await ask([{ role: 'user', content: coachRules() }, ...coach.turns.slice(-11)], { cache: false, signal: coach.ctl.signal, onText: ({ text }) => { coach.live = text.replace(/\*/g, ''); drawCoach(); } });
+    const t = text.replace(/\*/g, '').trim();
+    coach.turns.push({ role: 'assistant', content: t }); coach.msgs.push({ w: 'c', t });
+  } catch (e) {
+    coach.turns.pop();
+    if (e.code !== 'cancelled') coach.msgs.push({ w: 'c', t: ['no_ai', 'not_granted', 'sampling_disabled'].includes(e.code) ? localCoach(q) : errMsg(e.code) });
+  }
+  coach.busy = false; coach.live = ''; drawCoach();
+}
+
+/* ───────── vista: guía ───────── */
+function vGuia() {
+  const tk = dayKey(), n = S.nums[tk] || { p: 0, r: 0, c: 0 };
+  const days = Array.from({ length: 7 }, (_, i) => dayKey(-i)); const W = { p: 0, r: 0, c: 0 };
+  days.forEach(d => { const x = S.nums[d]; if (x) { W.p += x.p; W.r += x.r; W.c += x.c; } });
+  const dx = !W.p ? 'Anota tus números de hoy y en una semana vas a ver dónde se rompe tu cadena.'
+    : W.p < 10 ? 'Prospectos bajos: te falta volumen. Ningún cierre compensa ver poca gente.'
+    : W.r / W.p < 0.3 ? 'Ves gente y presentas poco. Revisa cómo abres y a quién estás prospectando.'
+    : W.c / Math.max(1, W.r) < 0.2 ? 'Presentas bien y cierras poco. Pule tus cierres de prueba y pide la venta. ¿Llevas cinco síes antes del cierre maestro?'
+    : 'Las tres líneas van juntas. Sube el volumen sin tocar nada más.';
+  const NL = { p: 'Prospectos', r: 'Presentaciones', c: 'Cierres' };
+  const acc = (t, inner, open) => `<details class="acc"${open ? ' open' : ''}><summary><span>${t}</span></summary><div class="in">${inner}</div></details>`;
+  const lessonCard = l => acc(`${l.num ? l.num + '. ' : ''}${esc(l.n)} <span class="label">${esc(l.src)}</span>`, `<p>${esc(l.idea)}</p><${l.lista ? 'ul' : 'ol'}>${l.f.map(x => `<li>${esc(x)}</li>`).join('')}</${l.lista ? 'ul' : 'ol'}>${l.fr.map(x => `<p>«${esc(x)}» ${sayBtn(x)}</p>`).join('')}<p class="muted"><b>Error común:</b> ${esc(l.err)}</p>${l.nota ? `<p class="note">${esc(l.nota)}</p>` : ''}`);
+  const st = (ok, y, nn) => `<li>${ok ? y : nn}</li>`;
+  return `<div class="wrap">
+  <section class="sheet"><div class="field"><p class="label">Mis números de hoy</p><h2>Prospectos, presentaciones y cierres</h2></div>
+    <div class="nums">${['p', 'r', 'c'].map(k => `<div class="num"><span class="label">${NL[k]}</span><b>${n[k]}</b><div class="row"><button class="pm" data-act="num" data-k="${k}" data-d="-1" aria-label="Restar">−</button><button class="pm" data-act="num" data-k="${k}" data-d="1" aria-label="Sumar">+</button></div></div>`).join('')}</div>
+    <p class="note"><b>Últimos 7 días: ${W.p} · ${W.r} · ${W.c}.</b> ${dx} <span class="muted">Lectura orientativa de la app.</span></p>
+    ${acc('Ver la semana', `<div class="tblwrap"><table><thead><tr><th>Día</th><th>Prosp.</th><th>Present.</th><th>Cierres</th></tr></thead><tbody>${days.map(d => { const x = S.nums[d] || { p: 0, r: 0, c: 0 }; return `<tr><td>${d.slice(8)}/${d.slice(5, 7)}</td><td>${x.p}</td><td>${x.r}</td><td>${x.c}</td></tr>`; }).join('')}</tbody></table></div>`)}
+  </section>
+  <section class="field"><p class="label">Los 12 cierres de Alex Dey</p>${LESSONS.filter(l => l.num).map(lessonCard).join('')}</section>
+  <section class="field"><p class="label">Cierres de Brian Tracy</p>${LESSONS.filter(l => l.k === 'tracy').map(lessonCard).join('')}</section>
+  <section class="field"><p class="label">Los 4 tipos de cliente</p>${D.TIPOS.map(t => acc(`${esc(t.n)} <span class="label">${esc(t.eje)}</span>`, `<div class="kv"><p><b>Cómo lo reconoces.</b> ${esc(t.senal)}</p><p><b>Qué necesita escuchar.</b> ${esc(t.quiere)}</p><p><b>Cómo le presentas.</b> ${esc(t.presenta)}</p><p><b>Cierres que le funcionan.</b> ${t.cierres.map(c => esc(LES[c].n)).join(', ')}.</p><p><b>Lo que lo espanta.</b> ${esc(t.espanta)}</p><p><b>El riesgo.</b> ${esc(t.riesgo)}</p></div>`)).join('')}</section>
+  <section class="field"><p class="label">Fundamentos, objeciones y referidos</p>${LESSONS.filter(l => !l.num && l.k !== 'tracy').map(lessonCard).join('')}</section>
+  <section class="sheet"><div class="field"><p class="label">Ajustes</p></div>
+    <div class="chips"><button class="chip" data-act="tog" data-k="voz" aria-pressed="${S.voz}">Voz del cliente</button><button class="chip" data-act="tog" data-k="auto" aria-pressed="${S.auto}">Enviar al terminar de hablar</button></div>
+    <div class="field"><span class="label">Qué funciona en este dispositivo</span><ul class="small">
+      ${st(aiReady(), 'IA de Claude: disponible para el Simulador, el Coach y las correcciones.', 'IA de Claude: no disponible aquí. Las lecciones y las rondas funcionan con autoevaluación.')}
+      ${st(document.body.hasAttribute('data-mic'), 'Micrófono: disponible. Toca el micrófono para hablar.', 'Micrófono: no disponible aquí. Usa el dictado del teclado de tu celular.')}
+      ${st(!!caps.tts && !ttsOff, 'Voz: el cliente te habla con voz de Claude.', 'Voz: se usa la voz del navegador cuando existe.')}
+      ${st(!!cloudDoc, 'Progreso: se guarda en tu cuenta y se sincroniza entre celular y computador.', 'Progreso: se guarda sólo en este navegador.')}</ul></div>
+    <div class="field"><span class="label">Fuentes</span><p class="small muted">Los textos y guiones de práctica fueron redactados para esta app a partir de los métodos de Brian Tracy (psicología de ventas) y de Alex Dey (cierres, tipos de cliente, guion de referidos y agenda del vendedor). No son citas textuales de sus libros ni cursos, y la app no está afiliada a ninguno de los dos.</p></div>
+    <div class="row">${resetAsk ? '<span>¿Borrar todo tu progreso?</span><button class="btn sm" data-act="resetYes">Sí, borrar</button><button class="btn sm" data-act="resetNo">Cancelar</button>' : '<button class="btn sm" data-act="resetAsk">Borrar mi progreso</button>'}</div>
+  </section></div>`;
+}
+let resetAsk = false;
+
+/* ───────── acciones ───────── */
+const ACT = {
+  go: b => go(b.dataset.v),
+  say: b => say(b.dataset.text, b.dataset.voice, true),
+  mic: b => micToggle(b.dataset.for),
+  lesson: b => { const l = LES[b.dataset.id]; if (!l) return; if (!unlocked(l)) return toast('Primero termina: ' + LESSONS[l.i - 1].n); hush(); startLesson(l.id); },
+  opt: b => { const it = ses.q[ses.i]; if (ses.st !== 'ans') return; it.pickd = Number(b.dataset.k); drawSes(); },
+  word: b => { const it = ses.q[ses.i]; if (ses.st !== 'ans') return; it.sel.push(Number(b.dataset.k)); drawSes(); },
+  unword: b => { const it = ses.q[ses.i]; if (ses.st !== 'ans') return; it.sel.splice(Number(b.dataset.k), 1); drawSes(); },
+  sesMain, sesClose,
+  self: b => { const it = ses.q[ses.i]; settle(it, Number(b.dataset.v) > 0); sesNext(); },
+  ronda: () => startRonda(),
+  reto: b => { cfg.foco = b.dataset.id; cfg.etapa = 'cierre'; ses = null; const p = $('#player'); p.hidden = true; p.innerHTML = ''; sim = null; go('simulador'); },
+  cfg: b => { const p = $('#prod'); if (p) S.prod = p.value.trim(); cfg[b.dataset.g] = b.dataset.v; render(); },
+  simStart, simSend, simHint, simEval,
+  simRetry: () => clientTurn(),
+  simBack: () => { sim.ev = null; render(); },
+  simNew: () => { sim = null; render(); },
+  simAgain: () => { const tipo = sim.tipo, prod = sim.prod, hide = sim.hide; sim = { on: true, prod, hide, tipo, turns: [], msgs: [], busy: false, end: '', err: '', live: '', ev: null }; sim.turns.push({ role: 'user', content: simRules() }); render(); clientTurn(); },
+  coachSend, coachSug: b => coachSend(b.dataset.q),
+  coachClear: () => { if (coach.ctl) coach.ctl.abort(); coach.turns = []; coach.msgs = []; coach.busy = false; render(); },
+  num: b => { const k = dayKey(), n = S.nums[k] || (S.nums[k] = { p: 0, r: 0, c: 0 }); n[b.dataset.k] = Math.max(0, n[b.dataset.k] + Number(b.dataset.d)); const keep = Object.keys(S.nums).sort().slice(-60); S.nums = Object.fromEntries(keep.map(x => [x, S.nums[x]])); save(); const y = $('#view').scrollTop; render(); $('#view').scrollTop = y; },
+  tog: b => { S[b.dataset.k] = !S[b.dataset.k]; if (!S.voz) hush(); save(); b.setAttribute('aria-pressed', S[b.dataset.k]); },
+  resetAsk: () => { resetAsk = true; render(); $('#view').scrollTop = 1e6; },
+  resetNo: () => { resetAsk = false; render(); $('#view').scrollTop = 1e6; },
+  resetYes: () => { resetAsk = false; const keep = { prod: S.prod, voz: S.voz, auto: S.auto }; S = Object.assign({}, DEF, { day: { d: '', xp: 0 }, done: {}, nums: {} }, keep); save(); go('ruta'); toast('Progreso borrado.'); }
+};
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-act]'); if (!b || b.disabled) return;
+  const f = ACT[b.dataset.act]; if (f) f(b, e);
+});
+document.addEventListener('change', e => { if (e.target.dataset.change === 'foco') cfg.foco = e.target.value; });
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter' || e.shiftKey || e.isComposing) return;
+  const t = e.target; if (!t.matches || !t.matches('textarea[data-send]')) return;
+  e.preventDefault(); ACT[t.dataset.send]();
+});
+
+/* ───────── arranque ───────── */
+markCaps(); render();
+capP.then(() => { if (view === 'guia' && !ses) render(); });
+initCloud();
+if ('speechSynthesis' in window) { try { speechSynthesis.getVoices(); } catch (e) {} }
+})();
+
+</script>
+</body>
+</html>
