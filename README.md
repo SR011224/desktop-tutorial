@@ -2,14 +2,27 @@
 
 App para aprender a cerrar ventas practicando, al estilo Duolingo. Funciona en celular y computador.
 
-Se basa en los métodos de **Brian Tracy** (psicología de ventas) y **Alex Dey** (cierres, tipos de cliente, guion de referidos y agenda del vendedor). Los textos y guiones fueron redactados para la app; no son citas textuales y la app no está afiliada a ninguno de los dos autores.
+Se basa en el material de **Alex Dey** (Los doce cierres de venta, La Biblia del Vendedor, Cómo identificar la personalidad del prospecto, El poder de la palabra hablada y los cuadernos del intensivo Cierra Más) y en los métodos de **Brian Tracy** (Psicología de ventas). Los textos y guiones fueron redactados para la app; la app no está afiliada a ninguno de los dos autores.
+
+## Metodología
+
+1. **Aprende** una técnica en un minuto.
+2. **Practícala** con ejercicios cortos: opción múltiple, armar la frase, reconocer el cierre y responder escribiendo o hablando.
+3. **Úsala** frente a un cliente en el Simulador.
+4. **Repásala** en el Repaso del día, que te la vuelve a preguntar a los 1, 2, 4, 7, 15 y 30 días (repetición espaciada). Si fallas, vuelve al día siguiente.
+
+La bienvenida ajusta la app a cada persona: qué vendes, meta diaria (10, 30 o 60 XP), tu tipo de vendedor (sanguíneo, colérico, flemático o melancólico, con tus lecciones clave marcadas) y una prueba de nivel opcional para saltar lo que ya dominas.
 
 ## Qué incluye
 
-- **Ruta**: 33 lecciones en 7 unidades, que se desbloquean en orden. Cada lección explica la técnica y la practica con opción múltiple, armar la frase, reconocer el cierre y responder con tu voz o por escrito.
-  - Los 12 cierres de Alex Dey, 5 cierres de Brian Tracy, 7 objeciones, tipos de cliente, mentalidad, referidos y medición.
+- **Ruta**: 46 lecciones en 10 unidades que se desbloquean en orden.
+  - Los 12 cierres de Alex Dey en su orden: conclusión, doble alternativa, amarre, amarre invertido, puercoespín, envolvente, equivocación, compromiso, eliminación, rebote, teoría del silencio y Benjamín Franklin.
+  - Más cierres de Alex Dey (insinuaciones, comprobación, por referencia, avión), 5 cierres de Brian Tracy, el método para rebatir objeciones (dos no y un sí, seis pasos, zapato en su pie, aislar) y 7 objeciones comunes.
+  - Mentalidad, ciclo de la venta, presentación, palabras que venden, precio, voz en forma de N, tipos de cliente, referidos y medición.
   - Tres sellos por técnica: aprendida, sin errores y usada en vivo.
-- **Simulador**: Claude hace de cliente (sanguíneo, colérico, flemático, melancólico o sorpresa) sobre tu producto. Al final, un entrenador califica la cita, detecta qué cierres usaste y propone la frase que cambiaría.
+- **Simulador**, en dos modos:
+  - **Cliente entrenado**: funciona en cualquier lugar, también en la app de Claude del celular. Pone objeciones según su tipo, reconoce los cierres del curso en lo que dices, sube o baja su interés y te califica.
+  - **Cliente con IA**: Claude improvisa al cliente y un entrenador evalúa la cita completa.
 - **Objeciones**: rondas rápidas de cinco objeciones con corrección.
 - **Coach**: preguntas del tipo «si el cliente dice X, ¿qué respondo?».
 - **Guía**: todas las técnicas de consulta, los 4 tipos de cliente y el registro diario de prospectos, presentaciones y cierres.
@@ -19,7 +32,8 @@ Se basa en los métodos de **Brian Tracy** (psicología de ventas) y **Alex Dey*
 | | Dentro de claude.ai (Artifact) | `index.html` suelto |
 | --- | --- | --- |
 | Lecciones, rondas, guía | Sí | Sí |
-| Simulador, Coach y corrección con IA | Sí | No (autoevaluación contra la respuesta modelo) |
+| Cliente entrenado, repaso y prueba de nivel | Sí | Sí |
+| Cliente con IA, Coach y corrección con IA | Sí, en navegador (no en la app de Claude del celular) | No (autoevaluación contra la respuesta modelo) |
 | Hablar (dictado) | Chrome/Edge de escritorio y app de escritorio | Chrome/Edge, con el micrófono del navegador |
 | Voz del cliente | Chrome/Edge de escritorio | Voz del navegador |
 | Progreso | Se sincroniza en tu cuenta | Sólo en ese navegador |

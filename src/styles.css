@@ -83,7 +83,11 @@ body[data-ai="off"] .if-ai-on{display:none}
 /* ruta */
 .today{background:var(--canary);color:var(--on-canary);border-radius:14px;padding:18px;display:grid;gap:14px}
 .today .label{color:var(--on-canary);opacity:.75}
-.today .btn{background:var(--on-canary);border-color:var(--on-canary);color:var(--canary)}
+.today .btn{background:var(--on-canary);border-color:var(--on-canary);color:var(--canary);flex:1 1 200px}
+.today .btn.alt{background:transparent;color:var(--on-canary)}
+.acts{display:flex;flex-wrap:wrap;gap:10px}
+.key{display:inline-block;margin-left:4px;font-size:.7rem;font-weight:700;color:var(--stamp);border:1.5px solid var(--stamp);border-radius:99px;padding:0 6px}
+.method{display:grid;gap:8px;padding-left:1.4em}
 .meter{display:grid;gap:6px;font-family:var(--f-mono);font-size:.76rem}
 .meter .bar{background:rgba(51,39,10,.2)} .meter .bar i{background:var(--on-canary)}
 .bar{flex:1;height:10px;border-radius:99px;background:var(--line);overflow:hidden}
@@ -181,6 +185,10 @@ details.acc>.in{padding:0 16px 16px;display:grid;gap:12px}
 .num b{font-family:var(--f-display);font-size:1.8rem;font-variant-numeric:tabular-nums;line-height:1}
 .num .row{gap:6px;justify-content:center}
 .pm{width:36px;height:36px;border-radius:50%;border:1.5px solid var(--line);background:var(--sheet);cursor:pointer;font-weight:700}
+.heat{flex-basis:100%;display:grid;gap:4px}
+.heat .bar{height:8px}
+.heat .bar i{background:var(--stamp)}
+code{font-family:var(--f-mono);overflow-wrap:anywhere}
 .tblwrap{overflow-x:auto}
 table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;font-size:.9rem}
 th,td{padding:6px 8px;text-align:right;border-bottom:1px solid var(--line)} th:first-child,td:first-child{text-align:left}
