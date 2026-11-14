@@ -27,6 +27,16 @@ La bienvenida ajusta la app a cada persona: qué vendes, meta diaria (10, 30 o 6
 - **Coach**: preguntas del tipo «si el cliente dice X, ¿qué respondo?».
 - **Guía**: todas las técnicas de consulta, los 4 tipos de cliente y el registro diario de prospectos, presentaciones y cierres.
 
+## Tenerla en el celular
+
+**Acceso directo (recomendado):** abre el enlace de la app en claude.ai desde el navegador del celular y agrégalo a la pantalla de inicio.
+- Android (Chrome): menú ⋮ → «Agregar a la pantalla principal».
+- iPhone (Safari): botón Compartir → «Agregar a inicio».
+
+Así conserva la IA de Claude y el progreso sincronizado con tu cuenta.
+
+**App instalable sin Claude:** `index.html` es una app web instalable (manifiesto, íconos y modo sin conexión con `sw.js`). Para instalarla tiene que estar publicada en una dirección `https`, por ejemplo con GitHub Pages (Settings → Pages → Deploy from a branch, carpeta raíz). En un repositorio privado, GitHub Pages requiere un plan de pago. Una vez publicada, ábrela en Chrome y elige «Instalar app». Esta versión funciona sin internet, pero no tiene la IA de Claude y guarda el progreso sólo en ese teléfono.
+
 ## Dónde funciona cada cosa
 
 | | Dentro de claude.ai (Artifact) | `index.html` suelto |

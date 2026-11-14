@@ -3,6 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#2347d9">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Cierres">
 <style>:root{padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}body{margin:0}[hidden]{display:none!important}</style>
 </head>
 <body>
@@ -1543,7 +1550,7 @@ function vSim() {
   const noAI = caps.ready && !aiReady();
   return `<div class="wrap"><section class="sheet">
   <div class="field"><p class="label">Ficha de la cita</p><h1>Vende frente a un cliente</h1><p class="muted">Un cliente te pone objeciones como en una cita real. Tú respondes hablando o escribiendo. Al final ves tu puntaje, qué cierres usaste y la frase que cambiaría.</p></div>
-  ${noAI ? `<div class="note"><b>Aquí no hay IA ni micrófono para la página</b> (pasa en la app de Claude del celular). Practica con el cliente entrenado y dicta con el micrófono de tu teclado. Para el cliente con IA y voz, abre la app en Chrome:<div class="row" style="margin-top:8px"><code class="small">${APP_URL}</code><button class="btn sm" data-act="copyLink">Copiar enlace</button></div></div>` : ''}
+  ${noAI ? `<div class="note"><b>Aquí no está la IA de Claude</b> (pasa en la app de Claude del celular y en la versión instalada). Practica con el cliente entrenado; si no ves el botón de micrófono, dicta con el micrófono de tu teclado. Para el cliente con IA, abre la app en Claude desde Chrome:<div class="row" style="margin-top:8px"><code class="small">${APP_URL}</code><button class="btn sm" data-act="copyLink">Copiar enlace</button></div></div>` : ''}
   <div class="field"><span class="label">Tipo de práctica</span><div class="chips">${chip('modo', 'local', 'Cliente entrenado')}${chip('modo', 'ia', 'Cliente con IA', noAI)}</div>
   <p class="small muted">${simModo() === 'ia' ? 'Claude improvisa al cliente y un entrenador evalúa la cita completa.' : 'Funciona en cualquier lugar, también en la app de Claude del celular: reconoce los cierres del curso en lo que dices y reacciona.'}</p></div>
   <div class="field"><label class="label" for="prod">¿Qué vendes?</label><input class="inp" id="prod" value="${esc(S.prod)}" placeholder="Ejemplo: seguros de vida para familias jóvenes" autocomplete="off"></div>
@@ -1853,5 +1860,6 @@ if ('speechSynthesis' in window) { try { speechSynthesis.getVoices(); } catch (e
 })();
 
 </script>
+<script>if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) navigator.serviceWorker.register("sw.js").catch(function () {});</script>
 </body>
 </html>
