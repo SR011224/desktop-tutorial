@@ -549,7 +549,73 @@ LESSONS: [
     ["Presentaste 12 veces y cerraste 1. ¿Qué trabajas?", ["Prospección en frío", "Cierres de prueba y pedir la venta", "El saludo"], 1, "Presentas bien y no pides la venta."],
     ["¿Qué tipo de meta mensual conviene?", ["De dinero", "De actividad: prospectos, presentaciones y cierres", "De horas"], 1, "El dinero depende de mucha gente; la actividad, sólo de ti."]
   ],
-  resp: [{ ctx: "Escribe el comentario de tu reporte diario para un cliente que se frenó en la mensualidad.", m: "Le interesa la cobertura educativa. Se frenó en la mensualidad. Próxima visita: probar el cierre por referencia.", c: "Anota la objeción concreta y qué cierre probar la próxima vez; no escribe sólo «interesado»." }] }
+  resp: [{ ctx: "Escribe el comentario de tu reporte diario para un cliente que se frenó en la mensualidad.", m: "Le interesa la cobertura educativa. Se frenó en la mensualidad. Próxima visita: probar el cierre por referencia.", c: "Anota la objeción concreta y qué cierre probar la próxima vez; no escribe sólo «interesado»." }] },
+/* ───────── Lecciones nuevas: prospección, presentación consultiva y disciplina ───────── */
+{ id: "prospectar", u: 1, n: "Prospectar en volumen", src: "Alex Dey · La Biblia del Vendedor", k: "base",
+  idea: "Para Alex Dey la secuencia de esta profesión es sencilla: un extraño se vuelve prospecto, el prospecto se vuelve cliente y el cliente se vuelve amigo, y un amigo te manda a sus amigos. Nada de lo que hagas con tus cierres compensa ver poca gente. Los referidos multiplican tu trabajo, pero no sustituyen la prospección diaria.",
+  f: ["Haz una lista diaria de personas nuevas: conocidos, conocidos de conocidos y negocios de tu zona.", "Fija una meta de contactos por día y cúmplela antes que cualquier otra cosa.", "Precalifica: ¿lo necesita?, ¿lo puede pagar?, ¿decide él?", "Pide referidos en cada cita, te compren o no."],
+  fr: ["Un extraño se vuelve prospecto, el prospecto cliente y el cliente amigo."],
+  err: "Vivir sólo de referidos. Cuando se acaban los recomendados, se acaba la carrera.",
+  mc: [
+    ["¿Qué compensa ver poca gente?", ["Un buen cierre", "Nada: hace falta volumen", "Un descuento"], 1, "Si la línea de prospectos está baja, ninguna técnica la salva."],
+    ["¿Qué tres preguntas precalifican a un prospecto?", ["¿Lo necesita?, ¿lo puede pagar?, ¿decide él?", "¿Dónde vive?, ¿qué edad tiene?, ¿qué auto tiene?", "¿Le caigo bien?, ¿tiene tiempo?, ¿está contento?"], 0, "Así no inviertes tu tiempo en quien no puede comprar."]
+  ],
+  resp: [{ ctx: "Te encuentras a un conocido en una reunión. Ábrele la conversación para prospectarlo sin venderle ahí mismo.", m: "¡Qué gusto verte! Oye, ahora estoy ayudando a familias a proteger su patrimonio. No te quiero vender nada aquí; ¿te parece si te llamo el martes o el miércoles y te cuento en diez minutos?", c: "Abre con naturalidad, dice en una frase a qué se dedica, no presenta ahí mismo y pide una cita con dos opciones." }] },
+
+{ id: "cita-tel", u: 1, n: "La cita por teléfono", src: "Alex Dey y Brian Tracy", k: "base", tag: "doble",
+  idea: "Por teléfono no se vende el producto: se vende la cita. Si lo explicas todo por teléfono, el cliente ya no necesita verte. Alex Dey arma la llamada con tres piezas: el nombre de quien te recomendó, una razón corta y positiva, y una doble alternativa para el día y la hora. Nunca termines con «¿cuándo tiene tiempo?».",
+  f: ["Saluda, di tu nombre y quién te recomendó, si aplica.", "Da una razón corta y positiva: el beneficio, no el producto.", "No vendas por teléfono: el objetivo es la cita.", "Pide la cita con doble alternativa de día y hora.", "Si te pide información por correo, usa eso para pedir la cita."],
+  fr: ["¿Le queda mejor el martes en la mañana o el jueves en la tarde?"],
+  err: "Explicar todo el producto por teléfono. Si ya lo sabe todo, no necesita la cita.",
+  mc: [
+    ["¿Cuál es el objetivo de la llamada en frío?", ["Vender el producto", "Conseguir la cita", "Mandar el catálogo"], 1, "Por teléfono se vende la cita."],
+    ["¿Con qué terminas la llamada?", ["¿Cuándo tiene tiempo?", "¿Le queda mejor el martes o el jueves?", "Le mando la información"], 1, "Siempre dos opciones."]
+  ],
+  resp: [{ cl: "Mándeme la información por correo y yo la reviso.", m: "Con gusto. Para mandarle sólo lo que de verdad le sirve necesito diez minutos con usted. ¿Le queda mejor el martes a las once o el jueves a las cinco?", c: "No manda el correo sin más ni discute; da una razón y pide la cita con dos opciones." }] },
+
+{ id: "sietepasos", u: 1, n: "Los siete pasos de la venta", src: "Brian Tracy", k: "base", lista: true,
+  idea: "Brian Tracy describe la venta profesional en siete pasos: prospectar, ganarte la confianza, identificar la necesidad, presentar, responder objeciones, cerrar y conseguir recompras y referidos. Propone además un modelo nuevo de venta: dedicar cerca del 40% del tiempo a la confianza, 30% a entender la necesidad, 20% a presentar y sólo 10% a cerrar. Cuando los primeros pasos están bien hechos, el cierre sale casi solo.",
+  f: ["Prospectar: encontrar a quién puede comprar.", "Confianza: la gente le compra a quien le cree.", "Necesidad: preguntar y escuchar más de lo que hablas.", "Presentar: sólo los beneficios que responden a su necesidad.", "Objeciones: responderlas sin discutir.", "Cerrar: pedir la decisión.", "Recompras y referidos: cuidar al cliente para que regrese y te recomiende."],
+  fr: ["Primero la confianza, luego la necesidad, después la presentación y al final el cierre."],
+  err: "Usar el modelo viejo: casi nada de relación y la mitad del tiempo empujando el cierre.",
+  mc: [
+    ["En el modelo nuevo de Tracy, ¿a qué dedicas más tiempo?", ["A cerrar", "A ganarte la confianza", "A presentar"], 1, "La confianza es el factor que más decide la compra."],
+    ["¿Cuál es el último paso de la venta según Tracy?", ["Cerrar", "Recompras y referidos", "Presentar"], 1, "La venta sigue después de la firma."]
+  ],
+  resp: [{ ctx: "Explícale a un compañero en una o dos frases el modelo nuevo de venta de Tracy.", m: "Dedica casi todo el tiempo a ganarte la confianza y a entender qué necesita el cliente; si haces eso bien, la presentación es corta y el cierre sale solo.", c: "Dice que la confianza y entender la necesidad van primero y ocupan la mayor parte; el cierre es la parte más corta." }] },
+
+{ id: "rapport", u: 1, n: "Primera impresión y confianza", src: "Alex Dey · La Biblia del Vendedor", k: "base",
+  idea: "El prospecto te analiza desde que te ve, y en el primer saludo ya tiene una opinión de ti. Dey pide cuidar la apariencia, escuchar bien su nombre y usarlo, sonreír de verdad y ser cortés. Para ganarte su confianza lo honras: le pides su consejo, respetas sus opiniones y repites sus propias palabras, porque lo que él dijo lo va a aceptar al cerrar. Tracy coincide: la gente compra cuando confía.",
+  f: ["Apariencia impecable: el cliente te juzga en segundos.", "Escucha su nombre y úsalo durante la plática.", "Sonrisa sincera y cortesía.", "Pídele su opinión y repite sus propias palabras.", "Si la plática se desvía, regrésala con diplomacia pero con autoridad."],
+  fr: ["Usted que conoce bien su negocio, ¿qué es lo que más le preocupa hoy?"],
+  err: "Llegar hablando de ti y del producto sin haber escuchado al cliente.",
+  mc: [
+    ["¿Por qué repetir las palabras del cliente?", ["Para llenar el silencio", "Porque lo que él dijo lo acepta al cerrar", "Para parecer interesante"], 1, "Sus palabras son tus mejores argumentos."],
+    ["La plática se va a otro tema. ¿Qué haces?", ["La dejo correr", "La regreso con diplomacia pero con autoridad", "Me despido"], 1, "Tú llevas el control de la cita."]
+  ],
+  resp: [{ ctx: "Acabas de sentarte con el señor Ramírez, dueño de una ferretería. Haz una pregunta que construya confianza.", m: "Señor Ramírez, usted que conoce bien su negocio, ¿qué es lo que más le quita el sueño en estos días?", c: "Usa su nombre, lo honra pidiéndole su opinión y hace una pregunta abierta sobre su situación." }] },
+
+{ id: "consultiva", u: 1, n: "Presenta como consultor", src: "Brian Tracy y Alex Dey", k: "base",
+  idea: "Tracy enseña a vender como un consultor: primero preguntas y escuchas, después presentas sólo los beneficios que responden a lo que el cliente dijo, del más importante al menos importante, y después de cada beneficio haces una pregunta de prueba. Dey lo resume así: dile lo que le vas a decir, díselo y dile lo que le dijiste.",
+  f: ["Pregunta antes de presentar: ¿qué usa hoy?, ¿qué no le gusta?, ¿qué le gustaría mejorar?", "Escucha y anota sus palabras.", "Presenta sólo los beneficios que responden a lo que dijo, del más importante al menos.", "Después de cada beneficio, una pregunta de prueba: «¿Esto le serviría?».", "Dile lo que le vas a decir, díselo y dile lo que le dijiste."],
+  fr: ["Dile lo que le vas a decir, díselo y dile lo que le dijiste."],
+  err: "Presentar el catálogo completo antes de saber qué necesita.",
+  mc: [
+    ["¿Qué haces antes de presentar?", ["Decir el precio", "Preguntar y escuchar", "Enseñar todo el catálogo"], 1, "Sin conocer la necesidad, presentas a ciegas."],
+    ["¿En qué orden presentas los beneficios?", ["Del más importante para el cliente al menos", "En el orden del folleto", "Del más barato al más caro"], 0, "Lo que más le importa, primero."]
+  ],
+  resp: [{ cl: "Ando buscando algo para mi negocio, pero no sé bien qué.", m: "Perfecto. Para recomendarle bien, déjeme hacerle tres preguntas: ¿qué usa hoy?, ¿qué es lo que menos le gusta de eso? y si pudiera cambiar una sola cosa, ¿cuál sería?", c: "No presenta todavía; hace preguntas abiertas para descubrir la necesidad antes de ofrecer." }] },
+
+{ id: "metas", u: 9, n: "Metas y disciplina diaria", src: "Brian Tracy y Alex Dey", k: "post",
+  idea: "Tracy insiste en escribir las metas: una meta que no está escrita es sólo un deseo. Dey lo lleva al día a día con su hoja «¡Qué precioso día!»: la noche anterior escribes tus seis prioridades, al final del día calificas tu actitud y tu fuerza de voluntad, y apartas tiempo para estudiar. Tus mejores días de ventas casi nunca son los de más horas, sino los de mejor actitud.",
+  f: ["Escribe tus metas y revísalas a diario.", "Cada noche, anota las seis prioridades del día siguiente.", "Ponte metas de actividad: prospectos, presentaciones y cierres.", "Estudia ventas todos los días, aunque sean veinte minutos.", "Califica tu día con honestidad: la actitud se trabaja igual que un cierre."],
+  fr: ["Viviré este día como si fuera el último de mi vida."],
+  err: "Esperar a tener ganas. Las ganas llegan después de empezar.",
+  mc: [
+    ["¿Cuándo escribes las prioridades del día, según Dey?", ["En la mañana, al llegar", "La noche anterior", "Cuando hay tiempo"], 1, "Así no desperdicias la primera hora decidiendo qué hacer."],
+    ["¿Qué tienen en común tus mejores días de ventas?", ["Más horas trabajadas", "Mejor actitud mental", "Más llamadas perdidas"], 1, "La actitud se nota en el cheque."]
+  ],
+  resp: [{ ctx: "Escribe tus metas de actividad para mañana.", m: "Mañana voy a contactar a 15 prospectos, hacer 4 presentaciones y pedir la venta en cada una.", c: "Son metas de actividad concretas, con números de prospectos, presentaciones y cierres; no metas de dinero." }] }
 ],
 
 TIPOS: [
@@ -659,3 +725,165 @@ ROLE: {
   lose: { s: "Mejor otro día, ¿va? Gracias. [PERDIDA]", c: "No me convenció. Gracias. [PERDIDA]", f: "Lo voy a pensar con calma. Gracias. [PERDIDA]", m: "Gracias… lo voy a pensar. [PERDIDA]" }
 }
 };
+(D => {
+/* Módulos del curso: cada uno junta lecciones, una clase narrada y una demostración hablada. */
+D.MODULES = [
+  { id: "m1", t: "Mentalidad del cerrador", d: "Antes de cualquier técnica: cómo te ves como vendedor, cómo recibes el «no» y qué hace que la gente compre.", ls: ["autoconcepto", "rechazo", "emocion", "conclusion"], demo: "d1" },
+  { id: "m2", t: "Prospectar y conseguir la cita", d: "El ciclo completo de la venta, a quién buscar todos los días y cómo conseguir la cita por teléfono.", ls: ["ciclo", "sietepasos", "prospectar", "cita-tel"], demo: "d2" },
+  { id: "m3", t: "Lee a tu cliente", d: "Los cuatro tipos de cliente, qué cierre funciona con cada uno y cómo ganarte su confianza imitando su ritmo.", ls: ["tipos", "tipos-cierre", "espejo"], demo: "d3" },
+  { id: "m4", t: "La presentación de ventas", d: "Cómo causar la primera impresión, preguntar antes de presentar, armar una presentación que vende, decir el precio y usar la voz.", ls: ["rapport", "consultiva", "presentacion", "palabras", "precio", "voz"], demo: "d4" },
+  { id: "m5", t: "Cierres durante la plática", d: "Los cierres de Alex Dey que vas usando en toda la conversación para juntar síes pequeños.", ls: ["doble", "amarre", "amarre-inv", "puerco", "envolvente", "equivoc"], demo: "d5" },
+  { id: "m6", t: "Cierres para cuando el cliente se frena", d: "Compromiso, rebote, eliminación, teoría del silencio y el Benjamín Franklin, el padre de todos los cierres.", ls: ["compromiso", "rebote", "elimina", "silencio", "franklin"], demo: "d6" },
+  { id: "m7", t: "Más cierres de Alex Dey", d: "Insinuaciones, comprobación, por referencia y el cierre del avión, según el tipo de cliente.", ls: ["insinua", "comprob", "referencia", "avion"], demo: "d7" },
+  { id: "m8", t: "Los cierres de Brian Tracy", d: "Invitación, directivo, punto menor, autorización y el cachorrito: cierres suaves para rematar.", ls: ["invitacion", "directivo", "secundario", "autoriza", "cachorro"], demo: "d8" },
+  { id: "m9", t: "Objeciones: el método", d: "Dos no y un sí, los seis pasos para rebatir, el zapato en su pie y cómo aislar la objeción.", ls: ["dosno", "seispasos", "zapato", "aisla"], demo: "d9" },
+  { id: "m10", t: "Las objeciones de todos los días", d: "Está caro, lo voy a pensar, lo tengo que consultar, tengo gastos, le compro a mi primo, sólo estoy viendo y no lo decido hoy.", ls: ["obj-caro", "obj-pensar", "obj-consultar", "obj-gastos", "obj-primo", "obj-viendo", "obj-nohoy"], demo: "d10" },
+  { id: "m11", t: "Referidos", d: "Los treinta segundos después del cierre: cómo pedir nombres y lograr que el cliente te abra la puerta.", ls: ["ref-nombres", "ref-cita"], demo: "d11" },
+  { id: "m12", t: "Disciplina y números", d: "Metas, prioridades diarias y cómo leer tus números para saber dónde se te escapa el dinero.", ls: ["metas", "numeros"], demo: "d12" }
+];
+
+/* Demostraciones: escenas habladas. v vendedor, c cliente, n nota del coach. tec: lección que se aplica. */
+D.DEMOS = [
+  { id: "d1", t: "Un «no me interesa» que se vuelve conversación", ctx: "Seguros. El vendedor llega a la oficina de un cliente que no lo esperaba.", lines: [
+    ["n", "Antes de entrar, el vendedor aplica el primer cierre: el cierre por conclusión, que es para él mismo."],
+    ["v", "Sí lo quiere, sí lo quiere. Vengo a ayudarle a decidir bien.", "conclusion"],
+    ["c", "Buenas. Le advierto que no me interesa nada, ¿eh?"],
+    ["v", "Lo entiendo, y no le quiero quitar tiempo. Sólo una pregunta: ¿qué es lo que menos le gusta del seguro que tiene hoy?", "rechazo"],
+    ["c", "Pues que cuando lo necesité, nadie me contestó el teléfono."],
+    ["v", "Eso es justo lo que vengo a resolver. Dígame, ¿qué es más importante para usted: el precio o que alguien le responda cuando lo necesita?", "emocion"],
+    ["c", "Que me respondan, claro."],
+    ["n", "Ahí está su botón caliente: el servicio. Toda la presentación va a girar alrededor de eso, y el «no» del principio quedó atrás sin discutir."]
+  ] },
+  { id: "d2", t: "La llamada que consigue la cita", ctx: "Llamada a un referido. El objetivo no es vender: es la cita.", lines: [
+    ["c", "¿Bueno?"],
+    ["v", "Buenas tardes, señor Méndez. Habla Carlos Ruiz; su cuñado Roberto Gómez me pidió que le llamara.", "ref-cita"],
+    ["c", "Ah, sí… ¿y de qué se trata?"],
+    ["v", "Roberto acaba de proteger a su familia con un plan que le gustó mucho y quiso que usted también lo conociera. Son diez minutos.", "cita-tel"],
+    ["c", "Mejor mándeme la información por correo."],
+    ["v", "Con gusto. Para mandarle sólo lo que le sirve, necesito conocerlo un poco. ¿Le queda mejor el martes a las once o el jueves a las cinco?", "doble"],
+    ["c", "El jueves está bien."],
+    ["v", "Perfecto, jueves a las cinco. Nos vemos, señor Méndez."],
+    ["n", "No vendió nada por teléfono: vendió la cita. Nombre de quien lo recomienda, razón corta y doble alternativa."]
+  ] },
+  { id: "d3", t: "Cinco minutos con una clienta colérica", ctx: "Software para empresas. La clienta lo recibe de pie y mira el reloj.", lines: [
+    ["n", "Rápida y enfocada en resultados: es colérica. Con ella, corto, firme y al grano."],
+    ["c", "Tengo cinco minutos. ¿Qué trae?"],
+    ["v", "Voy al grano: este sistema le ahorra diez horas de trabajo a la semana a su equipo. Le muestro cómo en tres minutos y usted decide.", "tipos"],
+    ["c", "¿Cuánto cuesta?"],
+    ["v", "Se lo digo enseguida. Si le demuestro que esas diez horas se pagan solas desde el primer mes, ¿lo implementamos?", "comprob"],
+    ["c", "Demuéstremelo."],
+    ["n", "Ni chistes ni historias largas. Le habló de resultados, le pidió el compromiso antes de demostrar y la dejó sentir que ella decide."]
+  ] },
+  { id: "d4", t: "Una presentación que empieza preguntando", ctx: "Venta de autos. La clienta llega a la agencia con sus hijos.", lines: [
+    ["v", "Señora Torres, antes de mostrarle nada, ¿qué auto tiene hoy y qué es lo que menos le gusta de él?", "consultiva"],
+    ["c", "Un sedán viejo. Gasta mucha gasolina y no caben bien las sillitas de los niños."],
+    ["v", "¿Le gustaría un auto donde quepan las dos sillitas y que gaste la mitad de gasolina?", "presentacion"],
+    ["c", "Pues sí, claro."],
+    ["v", "Este modelo consume la mitad que el suyo y el asiento de atrás está pensado para dos sillas. Una clienta con tres hijos me dijo que fue la mejor decisión de su año.", "presentacion"],
+    ["v", "Ahorrar gasolina y que los niños vayan cómodos es importante, ¿verdad?", "amarre"],
+    ["c", "Sí, muchísimo."],
+    ["n", "Primero preguntó y escuchó. Después presentó sólo lo que ella dijo: atención, interés, deseo y convicción. Y cerró la idea con un amarre."]
+  ] },
+  { id: "d5", t: "Síes pequeños hasta el cierre", ctx: "Venta de autos. La clienta ya probó el auto y está interesada.", lines: [
+    ["c", "¿Lo tienen en color gris?"],
+    ["v", "¿Lo quiere en gris?", "puerco"],
+    ["c", "Sí, el gris me gusta más."],
+    ["v", "Excelente elección. Dígame, ¿quién va a ser el primero en verlo cuando llegue a su casa?", "envolvente"],
+    ["c", "Mi esposo, se va a ir de espaldas."],
+    ["v", "Entonces, ¿lo registramos a nombre suyo o a nombre de los dos?", "doble"],
+    ["c", "De los dos."],
+    ["v", "Perfecto. Me dijo que lo quería para el día quince, ¿verdad?", "equivoc"],
+    ["c", "No, para el veinte."],
+    ["v", "Para el veinte, anotado."],
+    ["n", "Cada pregunta juntó un sí pequeño. Cuando ella corrigió la fecha, ya había comprado."]
+  ] },
+  { id: "d6", t: "«Déjeme pensarlo» resuelto con Benjamín Franklin", ctx: "Seguro de gastos médicos. El cliente es tranquilo y analítico.", lines: [
+    ["c", "Me gusta, pero déjeme pensarlo."],
+    ["n", "El vendedor guarda sus papeles como si ya se fuera. El cliente baja la guardia."],
+    ["v", "Claro. Me imagino que si lo quiere pensar es porque quiere tomar una buena decisión, ¿verdad?", "franklin"],
+    ["c", "Sí, exacto."],
+    ["v", "Hagamos algo rápido: de un lado anotamos las razones para hacerlo y del otro las que le hacen dudar.", "franklin"],
+    ["c", "A favor, la garantía, el servicio y que sí lo necesito. En contra… el pago mensual."],
+    ["v", "Si le consigo una mensualidad que le quede cómoda, ¿lo dejamos listo hoy?", "compromiso"],
+    ["c", "Si me queda cómoda, sí."],
+    ["v", "¿Prefiere pagar el día primero o el día quince?", "doble"],
+    ["n", "Y aquí se calla. Teoría del silencio: el primero que habla pierde.", "silencio"],
+    ["c", "El quince."]
+  ] },
+  { id: "d7", t: "Una clienta melancólica que teme equivocarse", ctx: "Seguro de vida. La clienta es mamá de dos niños.", lines: [
+    ["c", "Es que es una decisión difícil… no me quiero equivocar."],
+    ["v", "Tiene razón, es importante. Un piloto no espera el cielo perfecto: despega cuando revisó lo esencial. ¿Le resuelve lo que necesita? ¿El pago le queda cómodo? ¿Tiene la garantía por escrito?", "avion"],
+    ["c", "Sí… sí a las tres."],
+    ["v", "Lo mismo sentía una clienta, también mamá de dos niños, hace seis meses. Hoy me dice que duerme tranquila.", "referencia"],
+    ["v", "¿Se imagina la tranquilidad de saber que, pase lo que pase, sus hijos van a estar bien?", "insinua"],
+    ["c", "Sí… eso es justo lo que quiero."],
+    ["v", "¿Incluimos a sus dos hijos como beneficiarios o sólo al mayor?", "doble"],
+    ["n", "Con la melancólica: calma, una historia real y una imagen emocional. Nunca prisa."]
+  ] },
+  { id: "d8", t: "Cerrar con los cierres de Tracy", ctx: "Curso en línea para emprendedores. La presentación ya terminó.", lines: [
+    ["v", "¿Tiene alguna pregunta que no le haya contestado?", "invitacion"],
+    ["c", "No, creo que todo quedó claro."],
+    ["v", "Entonces, ¿por qué no lo prueba?", "invitacion"],
+    ["c", "Mmm… ¿y cómo sería?"],
+    ["v", "¿Tiene sentido para usted lo que vimos?", "directivo"],
+    ["c", "Sí."],
+    ["v", "Entonces el siguiente paso es sencillo: llenamos su registro y el lunes ya tiene acceso. ¿Lo quiere con la garantía extendida o con la estándar?", "secundario"],
+    ["c", "Con la extendida."],
+    ["v", "Perfecto. Si me autoriza aquí, yo me encargo de todo lo demás.", "autoriza"],
+    ["n", "Nunca dijo «firme el contrato». Invitó, dirigió, cerró sobre un detalle y pidió autorización."]
+  ] },
+  { id: "d9", t: "Una mala experiencia, sin discutir", ctx: "Servicio de mantenimiento. El cliente tuvo una mala experiencia con la empresa.", lines: [
+    ["c", "No quiero nada con ustedes: la vez pasada nadie me dio servicio."],
+    ["v", "Tiene toda la razón y lo comprendo.", "dosno"],
+    ["v", "¿Me haría un favor? Imagine que usted es el gerente de nuestra empresa y tiene un vendedor que no atiende a sus clientes. ¿Qué haría?", "zapato"],
+    ["c", "¡Pues lo corro!"],
+    ["v", "Eso es exactamente lo que hicimos. Ahora cada cliente tiene un asesor fijo. Eso aclara ese punto, ¿verdad?", "seispasos"],
+    ["c", "Bueno, sí."],
+    ["v", "Por cierto, ese asesor sería yo. Supongamos que el servicio ya no fuera problema: ¿habría algo más que le impidiera decidirse hoy?", "aisla"],
+    ["c", "No, sólo era eso."],
+    ["n", "No discutió ni contradijo su emoción. Lo puso en el lugar del gerente, confirmó y aisló la objeción antes de cerrar."]
+  ] },
+  { id: "d10", t: "«Está caro» y «tengo muchos gastos»", ctx: "Muebles para el hogar. La pareja ya eligió el modelo.", lines: [
+    ["c", "Está muy caro."],
+    ["v", "Comprendo. ¿Caro comparado con qué?", "obj-caro"],
+    ["c", "Con lo que vi en otra tienda."],
+    ["v", "Dígame algo: ¿qué es más importante para usted, el ahorro o la calidad?", "obj-caro"],
+    ["c", "La calidad, pero ahorita tengo muchos gastos."],
+    ["v", "Tiene razón, los compromisos tienen prioridad. En algo estamos de acuerdo: le gustó el producto, ¿verdad?", "obj-gastos"],
+    ["c", "Sí, me gustó mucho."],
+    ["v", "Si lo arreglo para que la inversión inicial sea mínima y la mensual no afecte su presupuesto, ¿cuál tomaría, el plan uno o el dos?", "obj-gastos"],
+    ["c", "El dos."],
+    ["n", "Nunca bajó el precio de entrada ni discutió: preguntó, le dio la razón y cambió el «si compra» por el «cómo compra»."]
+  ] },
+  { id: "d11", t: "Los treinta segundos después del sí", ctx: "El cliente acaba de autorizar el pedido y está contento.", lines: [
+    ["v", "Señor Gómez, déjeme preguntarle algo: ¿hay alguien más en su familia que se pudiera beneficiar con esto?", "ref-nombres"],
+    ["c", "Pues a lo mejor mi cuñado."],
+    ["v", "¿Cómo se llama su cuñado?"],
+    ["c", "Gabriel. Gabriel Méndez."],
+    ["v", "¿Y en su trabajo? ¿Algún compañero con quien platique de estas cosas?", "ref-nombres"],
+    ["c", "Sí, Laura, de contabilidad."],
+    ["v", "¿Sería tan amable de llamarle a Gabriel para ver si me puede atender hoy en la tarde o mañana sábado?", "ref-cita"],
+    ["c", "Sí, deje le marco."],
+    ["n", "No preguntó «¿conoce a alguien?». Abrió cajones concretos, pidió nombre y apellido, y logró que el cliente le hiciera la cita."]
+  ] },
+  { id: "d12", t: "Domingo en la noche: leer los números", ctx: "El vendedor revisa su semana con la gráfica de productividad.", lines: [
+    ["v", "Esta semana vi a 30 personas, presenté a 12 y cerré 1.", "numeros"],
+    ["n", "Presentaciones altas y cierres bajos: está presentando bien, pero no está pidiendo la venta."],
+    ["v", "Una sola corrección para la semana: después de cada beneficio voy a hacer un cierre de prueba, y en cada presentación voy a pedir la venta.", "numeros"],
+    ["v", "Mis seis prioridades de mañana: llamar a cinco referidos, dos presentaciones y el seguimiento a Ramón.", "metas"],
+    ["n", "Metas de actividad, una sola corrección por semana y las prioridades escritas la noche anterior. Planea tu trabajo y trabaja tu plan."]
+  ] }
+];
+
+/* Estilos de enseñanza y de venta para la IA. No es la persona real: es su método. */
+D.ESTILOS = {
+  dey: { n: "Estilo Alex Dey", corto: "Dey", voz: "rounded", rate: 1.06, pitch: 0.95,
+    d: "Entusiasta, cálido y directo. Motiva, cuenta anécdotas cortas y te llama campeón.",
+    coach: "Tu estilo es el de enseñanza de Alex Dey: entusiasta, cálido, directo y motivador; hablas como un conferencista latino de ventas, usas palabras como «campeón» y «campeona», cuentas anécdotas cortas y das frases contundentes y fáciles de recordar. Enseñas con su método: los doce cierres, los cuatro tipos de cliente, dos no y un sí, la voz en forma de N, el guion de referidos y la agenda del vendedor.",
+    vende: "Vendes con el estilo de Alex Dey: cálido, seguro y entusiasta; usas la doble alternativa, los amarres y el puercoespín durante toda la plática; ante objeciones das la razón primero («tiene razón», «comprendo») y aplicas sus cierres; usas palabras que venden (inversión, acuerdo, autorizar) y evitas las prohibidas (contrato, firmar, precio)." },
+  tracy: { n: "Estilo Brian Tracy", corto: "Tracy", voz: "glassy", rate: 0.96, pitch: 0.85,
+    d: "Sereno, analítico y ordenado. Enseña con principios y pasos claros.",
+    coach: "Tu estilo es el de enseñanza de Brian Tracy: sereno, analítico, ordenado y alentador; explicas con principios y pasos numerados, das ejemplos concretos y conectas todo con la psicología de ventas: autoconcepto, botón caliente, venta consultiva, los siete pasos de la venta, aislar objeciones y cierres de invitación, directivo, punto menor, autorización y el cachorrito.",
+    vende: "Vendes con el estilo de Brian Tracy: consultivo y sereno. Primero preguntas y escuchas, encuentras el botón caliente, presentas sólo los beneficios que responden a lo que dijo, haces una pregunta de prueba después de cada beneficio, aíslas cada objeción antes de resolverla y cierras con invitación, directivo, punto menor o autorización." }
+};
+})(window.DOJO);

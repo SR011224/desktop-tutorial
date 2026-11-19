@@ -1,63 +1,58 @@
-# Dojo de Cierres
+# Cierres
 
-App para aprender a cerrar ventas practicando, al estilo Duolingo. Funciona en celular y computador.
+Entrenador de ventas para aprender a cerrar como enseñan **Alex Dey** y **Brian Tracy**, conversando por voz o por escrito con una IA. Negro y dorado, para celular y computador.
 
-Se basa en el material de **Alex Dey** (Los doce cierres de venta, La Biblia del Vendedor, Cómo identificar la personalidad del prospecto, El poder de la palabra hablada y los cuadernos del intensivo Cierra Más) y en los métodos de **Brian Tracy** (Psicología de ventas). Los textos y guiones fueron redactados para la app; la app no está afiliada a ninguno de los dos autores.
+## Qué tiene
 
-## Metodología
+**Hablar** (la parte principal)
+- **Coach**: conversa con tu coach de ventas como en una llamada. Pregúntale qué responder ante una objeción, pídele que te enseñe un cierre, que arme contigo tu presentación o que haga un juego de rol.
+- **Tú vendes**: la IA es un cliente (sanguíneo, colérico, flemático, melancólico o sorpresa) que te pone objeciones. Al final te califica y te dice qué frase cambiar.
+- **Tú compras**: la IA es un vendedor experto con el estilo de Alex Dey o de Brian Tracy. Tú pones objeciones y debajo de cada frase ves qué técnica usó, para aprender escuchando.
+- **Cliente entrenado**: funciona sin IA (por ejemplo, en la app de Claude del celular). Reconoce los cierres del curso en lo que dices y reacciona.
+- Todas las sesiones se guardan y se pueden retomar.
 
-1. **Aprende** una técnica en un minuto.
-2. **Practícala** con ejercicios cortos: opción múltiple, armar la frase, reconocer el cierre y responder escribiendo o hablando.
-3. **Úsala** frente a un cliente en el Simulador.
-4. **Repásala** en el Repaso del día, que te la vuelve a preguntar a los 1, 2, 4, 7, 15 y 30 días (repetición espaciada). Si fallas, vuelve al día siguiente.
+**Aprender**: 12 módulos que se desbloquean en orden (o todos a la vez desde Perfil). Cada uno tiene:
+- una clase narrada en voz alta, tema por tema;
+- una demostración: una venta real contada con voces de vendedor y cliente, con la técnica marcada en cada frase (con IA, también con tu producto);
+- una clase por voz con el coach, que explica cada técnica y practica contigo;
+- práctica de respuestas: el cliente te habla y tú respondes.
 
-La bienvenida ajusta la app a cada persona: qué vendes, meta diaria (10, 30 o 60 XP), tu tipo de vendedor (sanguíneo, colérico, flemático o melancólico, con tus lecciones clave marcadas) y una prueba de nivel opcional para saltar lo que ya dominas.
+**Biblioteca**: las 52 técnicas con buscador, los 4 tipos de cliente y las demostraciones.
 
-## Qué incluye
+**Perfil**: tu estilo de vendedor (opcional), tu producto, el estilo del coach (Dey o Tracy), la IA, las voces, tus sesiones, tus números del día y el respaldo.
 
-- **Ruta**: 46 lecciones en 10 unidades que se desbloquean en orden.
-  - Los 12 cierres de Alex Dey en su orden: conclusión, doble alternativa, amarre, amarre invertido, puercoespín, envolvente, equivocación, compromiso, eliminación, rebote, teoría del silencio y Benjamín Franklin.
-  - Más cierres de Alex Dey (insinuaciones, comprobación, por referencia, avión), 5 cierres de Brian Tracy, el método para rebatir objeciones (dos no y un sí, seis pasos, zapato en su pie, aislar) y 7 objeciones comunes.
-  - Mentalidad, ciclo de la venta, presentación, palabras que venden, precio, voz en forma de N, tipos de cliente, referidos y medición.
-  - Tres sellos por técnica: aprendida, sin errores y usada en vivo.
-- **Simulador**, en dos modos:
-  - **Cliente entrenado**: funciona en cualquier lugar, también en la app de Claude del celular. Pone objeciones según su tipo, reconoce los cierres del curso en lo que dices, sube o baja su interés y te califica.
-  - **Cliente con IA**: Claude improvisa al cliente y un entrenador evalúa la cita completa.
-- **Objeciones**: rondas rápidas de cinco objeciones con corrección.
-- **Coach**: preguntas del tipo «si el cliente dice X, ¿qué respondo?».
-- **Guía**: todas las técnicas de consulta, los 4 tipos de cliente y el registro diario de prospectos, presentaciones y cierres.
+La IA enseña y vende con los métodos de Alex Dey y Brian Tracy, pero no es ninguno de ellos ni imita su voz. Las voces son las del dispositivo (o las de Claude dentro de claude.ai).
 
-## Tenerla en el celular
+## Dos formas de usarla
 
-**Acceso directo (recomendado):** abre el enlace de la app en claude.ai desde el navegador del celular y agrégalo a la pantalla de inicio.
-- Android (Chrome): menú ⋮ → «Agregar a la pantalla principal».
-- iPhone (Safari): botón Compartir → «Agregar a inicio».
-
-Así conserva la IA de Claude y el progreso sincronizado con tu cuenta.
-
-**App instalable sin Claude:** `index.html` es una app web instalable (manifiesto, íconos y modo sin conexión con `sw.js`). Para instalarla tiene que estar publicada en una dirección `https`, por ejemplo con GitHub Pages (Settings → Pages → Deploy from a branch, carpeta raíz). En un repositorio privado, GitHub Pages requiere un plan de pago. Una vez publicada, ábrela en Chrome y elige «Instalar app». Esta versión funciona sin internet, pero no tiene la IA de Claude y guarda el progreso sólo en ese teléfono.
-
-## Dónde funciona cada cosa
-
-| | Dentro de claude.ai (Artifact) | `index.html` suelto |
+| | En claude.ai (`dojo.html`) | App instalable (`index.html`) |
 | --- | --- | --- |
-| Lecciones, rondas, guía | Sí | Sí |
-| Cliente entrenado, repaso y prueba de nivel | Sí | Sí |
-| Cliente con IA, Coach y corrección con IA | Sí, en navegador (no en la app de Claude del celular) | No (autoevaluación contra la respuesta modelo) |
-| Hablar (dictado) | Chrome/Edge de escritorio y app de escritorio | Chrome/Edge, con el micrófono del navegador |
-| Voz del cliente | Chrome/Edge de escritorio | Voz del navegador |
-| Progreso | Se sincroniza en tu cuenta | Sólo en ese navegador |
+| IA | Tu cuenta de Claude, sin clave. Funciona en el navegador; la app de Claude del celular no se la permite a las páginas | Tu clave de API de Anthropic, guardada sólo en el teléfono |
+| Voz y micrófono | Navegador de escritorio | Chrome en Android; Safari en iPhone (la voz sí, el micrófono depende de la versión) |
+| Manos libres | No | Sí: escucha sola cuando la IA termina de hablar |
+| Sin internet | No | Sí, todo menos la IA |
+| Progreso | Se sincroniza con tu cuenta | Se guarda en el teléfono; usa Respaldo para pasarlo a otro |
 
-En el celular, dentro de claude.ai, usa el micrófono del teclado para dictar.
+### Publicar la app instalable
+1. Haz público este repositorio, o usa un plan de GitHub que permita Pages en repositorios privados.
+2. Settings → Pages → Deploy from a branch → elige la rama y la carpeta raíz.
+3. Abre la dirección que te da GitHub en Chrome del celular → menú ⋮ → «Instalar app».
+4. En la app: Perfil → IA → pega tu clave de API (console.anthropic.com → API Keys).
 
 ## Estructura
 
 ```
-src/data.js     contenido del curso (lecciones, tipos de cliente)
-src/app.js      lógica: lecciones, simulador, coach, voz, progreso
-src/styles.css  diseño (claro y oscuro)
-src/shell.html  estructura de la página
-build.mjs       une todo en dojo.html (Artifact) e index.html (navegador)
+src/data.js      contenido: lecciones, módulos, demostraciones, tipos de cliente, estilos
+src/app.js       la app: voz, micrófono, IA, chat, módulos, perfil
+src/styles.css   diseño negro y dorado
+src/shell.html   estructura de la página
+vendor/          SDK oficial de Anthropic empaquetado para el navegador (MIT)
+pwa/             manifiesto, íconos y modo sin conexión
+build.mjs        genera dojo.html (claude.ai) e index.html (app instalable)
 ```
 
-Para reconstruir después de un cambio: `node build.mjs`.
+Para reconstruir: `node build.mjs`.
+
+## Fuentes
+
+Alex Dey: Los doce cierres de venta, La Biblia del Vendedor, Cómo identificar la personalidad del prospecto, El poder de la palabra hablada y los cuadernos del intensivo Cierra Más (Los 4 tipos de cliente, El guion de referidos, La agenda del vendedor millonario). Brian Tracy: Psicología de ventas. Los textos están redactados para esta app a partir de ese material; la app no está afiliada a ninguno de los dos.
