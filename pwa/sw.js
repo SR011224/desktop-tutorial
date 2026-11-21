@@ -1,6 +1,6 @@
 // Guarda la app en el teléfono para que funcione sin internet.
 // La página se pide siempre primero a internet (así llega la versión nueva); sin conexión se usa la copia guardada.
-const CACHE = 'cierres-v7';
+const CACHE = 'cierres-v8';
 const FILES = ['./', './index.html', './manifest.webmanifest', './icon.svg', './icon-192.png', './icon-512.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES.map(f => new Request(f, { cache: 'reload' })))).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => {
