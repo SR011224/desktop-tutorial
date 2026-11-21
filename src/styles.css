@@ -206,3 +206,7 @@ body[data-listening] .mic svg{stroke:#fff}
 .fb{border-radius:12px;padding:14px 16px;display:grid;gap:6px}
 .fb.ok{background:var(--ok-soft);border:1px solid var(--ok)} .fb.ok b{color:var(--ok)}
 .fb.bad{background:var(--bad-soft);border:1px solid var(--bad)} .fb.bad b{color:var(--bad)}
+.prov{display:grid;gap:10px;justify-items:start;padding:16px;margin:12px 0;border:1px solid var(--line-2);border-radius:14px;background:var(--panel)}
+.prov h3{margin:0;font-size:1.02rem;display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.prov .field,.prov .steps{width:100%}
+a.btn{text-decoration:none;color:inherit}

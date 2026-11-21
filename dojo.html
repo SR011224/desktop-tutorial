@@ -211,6 +211,10 @@ body[data-listening] .mic svg{stroke:#fff}
 .fb{border-radius:12px;padding:14px 16px;display:grid;gap:6px}
 .fb.ok{background:var(--ok-soft);border:1px solid var(--ok)} .fb.ok b{color:var(--ok)}
 .fb.bad{background:var(--bad-soft);border:1px solid var(--bad)} .fb.bad b{color:var(--bad)}
+.prov{display:grid;gap:10px;justify-items:start;padding:16px;margin:12px 0;border:1px solid var(--line-2);border-radius:14px;background:var(--panel)}
+.prov h3{margin:0;font-size:1.02rem;display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.prov .field,.prov .steps{width:100%}
+a.btn{text-decoration:none;color:inherit}
 
 </style>
 <div class="app" id="app">
@@ -1134,6 +1138,7 @@ const EST = D.ESTILOS;
 const IN_CLAUDE = !!(window.claude && typeof window.claude.use === 'function');
 const HAS_SDK = !!(window.AnthropicSDK && window.AnthropicSDK.default);
 const APP_URL = 'https://claude.ai/artifact/XZ3gxaQNyCu471ffoSP9MU';
+const INSTALL_URL = 'https://sr011224.github.io/desktop-tutorial/';
 const MODELS = [['claude-opus-5-5', 'Claude Opus 5.5 (recomendado)'], ['claude-sonnet-5-5', 'Claude Sonnet 5.5'], ['claude-haiku-5-5', 'Claude Haiku 5.5 (el más económico)']];
 
 const $ = (s, r = document) => r.querySelector(s);
@@ -1151,7 +1156,7 @@ const fecha = t => { try { return new Date(t).toLocaleDateString('es', { day: 'n
 
 /* ───────── estado y guardado ───────── */
 const KEY = 'cierres.v2', KKEY = 'cierres.apikey';
-const DEF = () => ({ rev: 0, prod: '', me: '', estilo: 'dey', unlockAll: false, modDone: {}, lesDone: {}, demoSeen: {}, chats: [], nums: {}, voz: { on: true, rate: 1, pick: {} }, pausa: true, manos: true, model: 'claude-opus-5-5', cfg: {} });
+const DEF = () => ({ rev: 0, prod: '', me: '', estilo: 'dey', unlockAll: false, modDone: {}, lesDone: {}, demoSeen: {}, chats: [], nums: {}, voz: { on: true, rate: 1, pick: {} }, pausa: true, manos: true, model: 'claude-opus-5-5', gratis: true, gemTier: 'lite', cfg: {} });
 function load() {
   try {
     const raw = lsGet(KEY);
@@ -1215,16 +1220,21 @@ const capP = (async () => {
   if (caps.dict) wireDict();
   refreshStatus();
 })();
+const GKEY = 'cierres.gemkey';
 const apiKey = () => (lsGet(KKEY) || '').trim();
-const aiKind = () => (caps.sample && !aiOff) ? 'claude' : (HAS_SDK && apiKey()) ? 'api' : null;
+const gemKey = () => (lsGet(GKEY) || '').trim();
+/* La app instalada puede usar: tu clave de Claude (de pago), tu clave gratis de Gemini o la IA gratis sin clave. */
+const aiKind = () => (caps.sample && !aiOff) ? 'claude' : !HAS_SDK ? null : apiKey() ? 'api' : gemKey() ? 'gemini' : S.gratis !== false ? 'gratis' : null;
 const canSpeak = () => !!(caps.tts && !ttsOff) || !!SYN;
 const canMic = () => !micOff && (!!caps.dict || !!WebRec);
 function aiStatus() {
   const k = aiKind();
   if (k === 'claude') return { on: true, t: 'IA activa con tu cuenta de Claude' };
   if (k === 'api') return { on: true, t: 'IA activa con tu clave · ' + ((MODELS.find(m => m[0] === S.model) || MODELS[0])[1]).replace(/ \(.*\)/, '') };
+  if (k === 'gemini') return { on: true, t: 'IA activa con Gemini de Google (gratis)' };
+  if (k === 'gratis') return { on: true, t: 'IA gratis activa, sin clave' };
   if (!caps.ready) return { on: false, t: 'Conectando…' };
-  if (HAS_SDK) return { on: false, t: 'Conecta tu IA en Perfil para conversar' };
+  if (HAS_SDK) return { on: false, t: 'Activa la IA en Perfil para conversar (hay opciones gratis)' };
   if (IN_CLAUDE && aiOff) return { on: false, t: 'La IA está desactivada para esta página' };
   return { on: false, t: 'Aquí no está disponible la IA de Claude' };
 }
@@ -1233,7 +1243,7 @@ function aiStatus() {
 let synthVoices = [];
 function loadVoices() { if (!SYN) return; try { synthVoices = SYN.getVoices().filter(v => /^es/i.test(v.lang)); } catch (e) {} }
 if (SYN) { loadVoices(); try { SYN.addEventListener('voiceschanged', () => { loadVoices(); if (curView === 'perfil' && !stack.length) render(); }); } catch (e) {} }
-const rankV = v => { const l = v.lang.toLowerCase().replace('_', '-'); return (l === 'es-mx' ? 0 : l === 'es-us' ? 1 : /es-(419|co|ar|cl|pe|ve)/.test(l) ? 2 : l === 'es-es' ? 3 : 4) + (/google|natural|neural|online/i.test(v.name) ? -0.5 : 0); };
+const rankV = v => { const l = v.lang.toLowerCase().replace('_', '-'); return (l === 'es-mx' ? 0 : l === 'es-us' ? 1 : /es-(419|co|ar|cl|pe|ve)/.test(l) ? 2 : l === 'es-es' ? 3 : 4) + (/premium|enhanced|mejorada|natural|neural/i.test(v.name) ? -2.5 : /google|online/i.test(v.name) ? -0.5 : 0); };
 function synthVoice(role) {
   const want = S.voz.pick[role];
   const v = want && synthVoices.find(x => x.voiceURI === want); if (v) return v;
@@ -1354,10 +1364,146 @@ function mapApiErr(e) {
   if (e && e.name === 'AbortError') return { code: 'cancelled' };
   return { code: 'upstream_error' };
 }
-async function aiStream(system, turns, { onText, signal, effort = 'low', tier = 'default', maxTokens = 4000 } = {}) {
+/* Lectura de respuestas que llegan por partes (server-sent events) */
+const sleep = (ms, signal) => new Promise((ok, no) => { const t = setTimeout(ok, ms); if (signal) signal.addEventListener('abort', () => { clearTimeout(t); no({ code: 'cancelled' }); }, { once: true }); });
+const netErr = e => (e && (e.name === 'AbortError' || e.code === 'cancelled')) ? { code: 'cancelled' } : (e && e.code) ? e : { code: 'offline' };
+async function* sseData(res) {
+  const rd = res.body.getReader(), dec = new TextDecoder(); let buf = '';
+  try {
+    for (;;) {
+      const { value, done } = await rd.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      let i;
+      while ((i = buf.indexOf('\n')) >= 0) { const line = buf.slice(0, i).replace(/\r$/, ''); buf = buf.slice(i + 1); if (line.startsWith('data:')) yield line.slice(5).trim(); }
+    }
+    buf += dec.decode();
+    if (buf.startsWith('data:')) yield buf.slice(5).trim();
+  } finally { try { rd.releaseLock(); } catch (e) {} }
+}
+
+/* Gemini de Google: clave gratis de aistudio.google.com. Busca solo el mejor modelo Flash disponible para tu clave. */
+const GEM = 'https://generativelanguage.googleapis.com/v1beta/';
+let gemList = null, gemListKey = '';
+const gemNoThink = {};
+async function gemErr(r) {
+  let msg = ''; try { const j = await r.json(); msg = (j.error && j.error.message) || ''; } catch (e) {}
+  if (r.status === 401 || r.status === 403 || (r.status === 400 && /api.?key/i.test(msg))) return { code: 'bad_key', message: msg };
+  if (r.status === 429) return { code: 'rate_limited', message: msg };
+  if (r.status === 404) return { code: 'bad_model', message: msg };
+  if (r.status === 400) return { code: 'bad_request', message: msg };
+  return { code: 'upstream_error', message: msg };
+}
+async function gemModels(key, signal) {
+  if (gemList && gemListKey === key) return gemList;
+  let r;
+  try { r = await fetch(GEM + 'models?pageSize=1000', { headers: { 'x-goog-api-key': key }, signal }); } catch (e) { throw netErr(e); }
+  if (!r.ok) { const er = await gemErr(r); if (er.code === 'bad_key') throw er; return { lite: ['gemini-flash-lite-latest', 'gemini-2.5-flash-lite'], full: ['gemini-flash-latest', 'gemini-2.5-flash'] }; }
+  const j = await r.json().catch(() => ({}));
+  const names = (j.models || []).filter(m => (m.supportedGenerationMethods || []).includes('generateContent')).map(m => String(m.name || '').replace(/^models\//, ''))
+    .filter(n => /^gemini-/.test(n) && /flash/.test(n) && !/tts|image|live|audio|embed|vision|thinking|exp|robotics|computer|learnlm|8b/.test(n));
+  const ver = n => { const m = n.match(/gemini-(\d+(?:\.\d+)?)/); return m ? parseFloat(m[1]) : 0; };
+  const score = n => (/-latest$/.test(n) ? 100 : 0) + ver(n) * 10 - (/preview/.test(n) ? 3 : 0) - (/-\d{3}$|\d{2}-\d{2,4}$/.test(n) ? 1 : 0);
+  const sort = a => a.sort((x, y) => score(y) - score(x));
+  gemList = { lite: sort(names.filter(n => /lite/.test(n))), full: sort(names.filter(n => !/lite/.test(n))) };
+  if (!gemList.lite.length && !gemList.full.length) gemList = { lite: ['gemini-flash-lite-latest'], full: ['gemini-flash-latest'] };
+  gemListKey = key;
+  return gemList;
+}
+async function gemStream(system, turns, { onText, signal, maxTokens }) {
+  const key = gemKey(), L = await gemModels(key, signal);
+  const order = (S.gemTier === 'full' ? [L.full[0], L.lite[0], L.full[1]] : [L.lite[0], L.full[0], L.lite[1]]).filter(Boolean);
+  const contents = mergeTurns(turns).map(t => ({ role: t.role === 'assistant' ? 'model' : 'user', parts: [{ text: t.content }] }));
+  let last = { code: 'upstream_error' };
+  for (const model of order) {
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const gc = { maxOutputTokens: Math.max(maxTokens, 2048), temperature: 0.9 };
+      if (!gemNoThink[model]) gc.thinkingConfig = { thinkingBudget: 0 };
+      let r;
+      try { r = await fetch(GEM + 'models/' + model + ':streamGenerateContent?alt=sse', { method: 'POST', headers: { 'content-type': 'application/json', 'x-goog-api-key': key }, body: JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents, generationConfig: gc }), signal }); } catch (e) { throw netErr(e); }
+      if (!r.ok) {
+        last = await gemErr(r);
+        if (last.code === 'bad_key') throw last;
+        if (last.code === 'bad_request' && gc.thinkingConfig) { gemNoThink[model] = true; continue; }
+        if (last.code === 'upstream_error' && attempt < 2) { await sleep(1500, signal); continue; }
+        if (last.code === 'bad_model') gemList = null;
+        break;
+      }
+      let acc = '', blocked = false;
+      try {
+        for await (const d of sseData(r)) {
+          let j; try { j = JSON.parse(d); } catch (e) { continue; }
+          if (j.promptFeedback && j.promptFeedback.blockReason) blocked = true;
+          const c = j.candidates && j.candidates[0];
+          for (const pt of (c && c.content && c.content.parts) || []) if (pt.text && !pt.thought) acc += pt.text;
+          if (c && /SAFETY|PROHIBITED|BLOCKLIST|SPII/.test(c.finishReason || '')) blocked = true;
+          if (onText && acc) onText(acc);
+        }
+      } catch (e) { throw netErr(e); }
+      if (acc) return acc;
+      if (blocked) throw { code: 'refused' };
+      last = { code: 'upstream_error' };
+      if (attempt < 2) continue;
+      break;
+    }
+  }
+  throw last;
+}
+
+/* IA gratis sin clave: servicio público de Pollinations (sin registro). Puede ir lento cuando hay mucha gente. */
+const FREE_URL = 'https://text.pollinations.ai/openai';
+let freeLast = 0, freeModel = true;
+const freeClean = t => String(t).replace(/<think>[\s\S]*?(<\/think>|$)/gi, '').replace(/\n\s*-{3,}[\s\S]*$/, '').split('\n').filter(l => !/pollinations|sponsor|patrocinad|🌸/i.test(l)).join('\n');
+async function freeStream(system, turns, { onText, signal }) {
+  const messages = [{ role: 'system', content: system }, ...mergeTurns(turns)];
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const wait = freeLast + 2500 - Date.now(); if (wait > 0) await sleep(wait, signal);
+    freeLast = Date.now();
+    const body = { messages, stream: true, private: true, referrer: 'cierres-app' };
+    if (freeModel) body.model = 'openai';
+    let r;
+    try { r = await fetch(FREE_URL, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body), signal }); }
+    catch (e) { const er = netErr(e); if (er.code === 'cancelled') throw er; if (attempt < 2) { await sleep(2500, signal); continue; } throw { code: 'free_down' }; }
+    if (r.status === 400 && freeModel) { freeModel = false; continue; }
+    if (r.status === 429 || r.status >= 500) {
+      if (attempt < 3) { if (attempt === 0) toast('La IA gratis está ocupada. Reintento en unos segundos…'); await sleep(r.status === 429 ? 8000 : 3000, signal); continue; }
+      throw { code: r.status === 429 ? 'free_busy' : 'free_down' };
+    }
+    if (!r.ok) throw { code: 'free_down' };
+    let acc = '';
+    try {
+      if (/event-stream/i.test(r.headers.get('content-type') || '')) {
+        for await (const d of sseData(r)) {
+          if (d === '[DONE]') break;
+          let j; try { j = JSON.parse(d); } catch (e) { continue; }
+          const c = j.choices && j.choices[0], t = c && ((c.delta && c.delta.content) || (c.message && c.message.content));
+          if (t) { acc += t; if (onText) onText(freeClean(acc)); }
+        }
+      } else {
+        const txt = await r.text();
+        try { const j = JSON.parse(txt); acc = (j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content) || ''; } catch (e) { acc = txt; }
+        if (onText) onText(freeClean(acc));
+      }
+    } catch (e) { throw netErr(e); }
+    acc = freeClean(acc).trim();
+    if (acc) return acc;
+    if (attempt < 3) continue;
+  }
+  throw { code: 'free_down' };
+}
+
+async function aiStream(system, turns, { onText, signal, effort = 'low', tier = 'default', maxTokens = 4000, kind: force } = {}) {
   await capP;
-  const kind = aiKind();
+  const kind = force || aiKind();
   if (!kind) throw { code: 'no_ai' };
+  if (kind === 'gemini') {
+    try { return await gemStream(system, turns, { onText, signal, maxTokens }); }
+    catch (e) {
+      if (!force && e && (e.code === 'rate_limited' || e.code === 'upstream_error') && S.gratis !== false) { toast(e.code === 'rate_limited' ? 'Se acabó por ahora el cupo gratis de Gemini. Sigo con la IA gratis.' : 'Gemini no respondió. Sigo con la IA gratis.'); return freeStream(system, turns, { onText, signal }); }
+      throw e;
+    }
+  }
+  if (kind === 'gratis') return freeStream(system, turns, { onText, signal });
   if (kind === 'claude') {
     const input = [{ role: 'user', content: system + (turns.length ? '' : '\n\nEmpieza tú ahora.') }, ...turns];
     if (input[input.length - 1].role !== 'user') input.push({ role: 'user', content: '(Continúa.)' });
@@ -1390,11 +1536,14 @@ function parseJSON(t) { try { return JSON.parse(t); } catch (e) {} const a = t.i
 async function aiJSON(prompt, effort = 'medium') { return parseJSON(await aiStream('Respondes sólo con un objeto JSON válido, sin texto antes ni después.', [{ role: 'user', content: prompt }], { effort, tier: 'default' })); }
 const errMsg = (code, msg) => ({
   no_ai: 'La IA no está conectada aquí. Revisa Perfil → IA.',
+  free_busy: 'La IA gratis está saturada en este momento. Espera un minuto, o conecta Gemini gratis en Perfil → IA para que sea más estable.',
+  free_down: 'La IA gratis no respondió. Revisa tu internet, o conecta Gemini gratis en Perfil → IA (toma 2 minutos).',
+  cancelled: 'Cancelado.',
   bad_key: 'Tu clave de API no funciona. Revísala en Perfil → IA.',
   bad_model: 'Ese modelo no está disponible para tu clave. Cambia el modelo en Perfil → IA.',
   bad_request: 'La IA rechazó la solicitud' + (msg ? ': ' + msg : '.'),
   offline: 'Sin conexión a internet. Revisa tu señal e intenta de nuevo.',
-  rate_limited: 'Llegaste al límite de uso por ahora. Espera un momento e intenta de nuevo.',
+  rate_limited: 'Llegaste al límite de uso gratis por ahora. Espera un rato, o activa la IA gratis sin clave en Perfil → IA.',
   session_expired: 'Tu sesión de Claude expiró. Vuelve a iniciar sesión.',
   refused: 'La IA no quiso responder a eso. Cambia la frase e intenta de nuevo.',
   not_granted: 'La IA no está permitida en esta página. Toca «Revisar permisos» en Perfil.',
@@ -1530,10 +1679,10 @@ const MODES = {
 };
 function aiBanner() {
   const st = aiStatus();
-  if (st.on) return `<p class="status on">${esc(st.t)}</p>`;
+  if (st.on) return `<p class="status on">${esc(st.t)}</p>${aiKind() === 'gratis' ? '<p class="small muted">¿Responde lento? Conecta Gemini gratis con tu cuenta de Google y va más rápido. <button class="link" data-act="goKey">Cómo hacerlo</button></p>' : ''}`;
   if (!caps.ready) return `<p class="status">${esc(st.t)}</p>`;
-  if (HAS_SDK) return `<div class="notice"><b>Conecta tu IA para conversar.</b> Pega tu clave de Anthropic una sola vez y se queda guardada en este teléfono. <button class="btn sm gold" data-act="goKey">Conectar IA</button></div>`;
-  return `<div class="notice"><b>${esc(st.t)}.</b> Pasa en la app de Claude del celular: ahí la página no puede usar la IA ni el micrófono. Ábrela desde claude.ai en el navegador de tu computador, o usa la app instalable con tu clave. Mientras tanto, practica con el cliente entrenado.${IN_CLAUDE && aiOff && caps.perm ? ' <button class="btn sm" data-act="perms">Revisar permisos</button>' : ''}</div>`;
+  if (HAS_SDK) return `<div class="notice"><b>Activa la IA para conversar.</b> Hay dos opciones gratis: la IA sin clave o Gemini con tu cuenta de Google. <button class="btn sm gold" data-act="goKey">Activar IA</button></div>`;
+  return `<div class="notice"><b>${esc(st.t)}.</b> Pasa en la app de Claude del celular: ahí la página no puede usar la IA ni el micrófono. Usa la app instalable, que trae IA y voz gratis: <a href="${INSTALL_URL}" target="_blank" rel="noopener">${INSTALL_URL.replace('https://', '')}</a>. Mientras tanto, practica con el cliente entrenado.${IN_CLAUDE && aiOff && caps.perm ? ' <button class="btn sm" data-act="perms">Revisar permisos</button>' : ''}</div>`;
 }
 function chatRow(c, del) {
   const last = c.msgs.filter(m => m.w !== 's').slice(-1)[0];
@@ -1613,17 +1762,37 @@ function vPerfil() {
 
   <section class="block" id="ia"><h2>IA</h2>
     <p class="status${st.on ? ' on' : ''}">${esc(st.t)}</p>
-    ${HAS_SDK ? `<p class="small muted">Esta app conversa con Claude usando tu clave de API de Anthropic. Créala en console.anthropic.com → API Keys (necesitas cargar saldo). La clave se guarda sólo en este teléfono y no va en tus respaldos.</p>
-    <label class="field"><span class="eyebrow">Clave de API</span><span class="row nowrap"><input class="inp" id="keyIn" type="password" value="" placeholder="${apiKey() ? 'Clave guardada · pega otra para cambiarla' : 'sk-ant-…'}" autocomplete="off"><button class="btn sm gold" data-act="saveKey">Guardar</button></span></label>
-    ${apiKey() ? '<div class="row"><button class="btn sm" data-act="testAI">Probar conexión</button><button class="btn sm" data-act="delKey">Borrar clave</button></div>' : ''}
-    <label class="field"><span class="eyebrow">Modelo</span><select class="inp" data-change="model">${MODELS.map(([v, t]) => `<option value="${v}"${S.model === v ? ' selected' : ''}>${t}</option>`).join('')}</select></label>`
-    : `<p class="small muted">${IN_CLAUDE ? 'Dentro de claude.ai la IA usa tu propia cuenta de Claude: no necesitas clave. Funciona en el navegador del computador; la app de Claude del celular no se la permite a las páginas.' : 'Esta versión no trae conexión directa a la IA.'}</p>${IN_CLAUDE && caps.perm ? '<button class="btn sm" data-act="perms">Revisar permisos</button>' : ''}`}
+    ${HAS_SDK ? `<p class="small muted">Elige cómo conversa la app. Las dos primeras opciones son gratis. Si tienes varias, usa la mejor: Claude, luego Gemini, luego la IA sin clave.</p>
+    <div class="prov">
+      <h3>1. IA gratis sin clave</h3>
+      <p class="small muted">Funciona apenas abres la app, sin registrarte. Es un servicio público (Pollinations): cuando hay mucha gente puede tardar unos segundos. No escribas datos personales.</p>
+      <div class="chips"><button class="chip" data-act="tog" data-k="gratis" aria-pressed="${S.gratis !== false}">Usar la IA gratis sin clave</button></div>
+      ${aiKind() === 'gratis' ? '<div class="row"><button class="btn sm" data-act="testAI" data-p="gratis">Probar conexión</button></div>' : ''}
+    </div>
+    <div class="prov">
+      <h3>2. Gemini de Google · gratis con tu cuenta <span class="tags"><i>Recomendado</i></span></h3>
+      <p class="small muted">Más rápida y estable. Google da un cupo diario gratis; si se acaba, la app sigue con la IA sin clave.</p>
+      <ol class="steps small"><li>Toca «Sacar mi clave gratis» y entra con tu cuenta de Google.</li><li>Toca «Create API key» (Crear clave de API) y luego «Copy» (Copiar).</li><li>Vuelve aquí, pégala abajo y toca Guardar.</li></ol>
+      <a class="btn sm gold" href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Sacar mi clave gratis</a>
+      <label class="field"><span class="eyebrow">Clave de Gemini</span><span class="row nowrap"><input class="inp" id="gemIn" type="password" value="" placeholder="${gemKey() ? 'Clave guardada · pega otra para cambiarla' : 'AIza…'}" autocomplete="off"><button class="btn sm gold" data-act="saveGem">Guardar</button></span></label>
+      ${gemKey() ? `<div class="row"><button class="btn sm" data-act="testAI" data-p="gemini">Probar conexión</button><button class="btn sm" data-act="delGem">Borrar clave</button></div>
+      <div class="field"><span class="eyebrow">Modelo de Gemini</span><div class="chips"><button class="chip" data-act="gemTier" data-v="lite" aria-pressed="${S.gemTier !== 'full'}">Rápido · más conversaciones al día</button><button class="chip" data-act="gemTier" data-v="full" aria-pressed="${S.gemTier === 'full'}">Más listo · pocas al día</button></div></div>` : ''}
+      <p class="small muted">En el plan gratis, Google puede usar lo que escribes para mejorar sus productos. La clave se guarda sólo en este teléfono y no va en tus respaldos.</p>
+    </div>
+    <details class="acc"${apiKey() ? ' open' : ''}><summary><span><b>3. Claude de Anthropic</b><small>De pago: la mejor calidad para enseñar y vender</small></span></summary><div class="in">
+      <p class="small muted">Crea la clave en console.anthropic.com → API Keys (necesitas cargar saldo). Se guarda sólo en este teléfono.</p>
+      <label class="field"><span class="eyebrow">Clave de API de Anthropic</span><span class="row nowrap"><input class="inp" id="keyIn" type="password" value="" placeholder="${apiKey() ? 'Clave guardada · pega otra para cambiarla' : 'sk-ant-…'}" autocomplete="off"><button class="btn sm gold" data-act="saveKey">Guardar</button></span></label>
+      ${apiKey() ? '<div class="row"><button class="btn sm" data-act="testAI" data-p="api">Probar conexión</button><button class="btn sm" data-act="delKey">Borrar clave</button></div>' : ''}
+      <label class="field"><span class="eyebrow">Modelo</span><select class="inp" data-change="model">${MODELS.map(([v, t]) => `<option value="${v}"${S.model === v ? ' selected' : ''}>${t}</option>`).join('')}</select></label>
+    </div></details>`
+    : `<p class="small muted">${IN_CLAUDE ? 'Dentro de claude.ai la IA usa tu propia cuenta de Claude: no necesitas clave. Funciona en el navegador del computador; la app de Claude del celular no se la permite a las páginas.' : 'Esta versión no trae conexión directa a la IA.'} En el celular usa la app instalable, con IA y voz gratis: <a href="${INSTALL_URL}" target="_blank" rel="noopener">${INSTALL_URL.replace('https://', '')}</a></p>${IN_CLAUDE && caps.perm ? '<button class="btn sm" data-act="perms">Revisar permisos</button>' : ''}`}
   </section>
 
   <section class="block"><h2>Voz</h2>
     <div class="chips"><button class="chip" data-act="tog" data-k="voz.on" aria-pressed="${S.voz.on}">La IA me habla en voz alta</button><button class="chip" data-act="tog" data-k="pausa" aria-pressed="${S.pausa}">Enviar cuando hago una pausa</button>${WebRec && !caps.dict ? `<button class="chip" data-act="tog" data-k="manos" aria-pressed="${S.manos}">Manos libres: escuchar cuando la IA termina</button>` : ''}</div>
     <label class="field"><span class="eyebrow">Velocidad de la voz · ${(S.voz.rate || 1).toFixed(2)}×</span><input type="range" min="0.75" max="1.35" step="0.05" value="${S.voz.rate || 1}" data-change="rate"></label>
     ${caps.tts && !ttsOff ? '<p class="small muted">Usando las voces de Claude.</p>' : SYN ? (voices.length ? vsel('coach', 'Voz del coach y del narrador') + vsel('vend', 'Voz del vendedor') + vsel('cli', 'Voz del cliente') : '<p class="small muted">Tu dispositivo no tiene voces en español instaladas. En Android: Ajustes → Texto a voz → instala «Español». En iPhone: Ajustes → Accesibilidad → Contenido leído → Voces.</p><button class="btn sm" data-act="testVoice" data-role="coach">Probar voz</button>') : '<p class="small muted">Aquí la página no puede hablar en voz alta (pasa en la app de Claude de Android). Lee las respuestas o usa la app instalada.</p>'}
+    ${SYN && !(caps.tts && !ttsOff) ? '<details class="acc"><summary><span><b>¿La voz suena robótica?</b><small>Instala voces naturales gratis en tu teléfono</small></span></summary><div class="in"><p class="small"><b>Android:</b> Ajustes → Accesibilidad (o Sistema → Idioma) → Salida de texto a voz → Motor de Google → ⚙ → Instalar datos de voz → Español (Estados Unidos o México) → descarga y elige una voz. Luego cierra y abre Cierres.</p><p class="small"><b>iPhone:</b> Ajustes → Accesibilidad → Contenido leído → Voces → Español → descarga «Paulina (mejorada)» o «Mónica (mejorada)». Luego elígela arriba.</p><p class="small muted">Las voces marcadas como mejorada, premium o natural se eligen solas cuando las tienes.</p></div></details>' : ''}
     <p class="small muted">${canMic() ? 'Micrófono disponible: toca el botón dorado para hablar.' : 'Aquí la página no puede usar el micrófono: toca el micrófono de tu teclado y dicta.'}</p>
   </section>
 
@@ -1778,7 +1947,7 @@ OV.setup = o => {
   if (o.m === 'vendedor') body = prod + estilo + tipos('comprador', ['', 'Libre']) + `<p class="small muted">Debajo de cada frase del vendedor verás qué técnica usó. Ponle objeciones para ver cómo las resuelve.</p>`;
   return `${head(m.t, '')}<div class="sbody"><div class="wrap">
   <p class="lead muted">${esc(m.d)}</p>
-  ${needAI ? `<div class="notice">${HAS_SDK ? '<b>Primero conecta tu IA.</b> Ve a Perfil → IA y pega tu clave. <button class="btn sm gold" data-act="goKey">Conectar IA</button>' : '<b>Aquí no está la IA.</b> En la app de Claude del celular la página no puede usarla. Ábrela desde claude.ai en el computador o en la app instalada. Mientras tanto usa el cliente entrenado.'} <button class="btn sm" data-act="setup" data-m="entrenado">Usar el cliente entrenado</button></div>` : ''}
+  ${needAI ? `<div class="notice">${HAS_SDK ? '<b>Primero activa la IA.</b> En Perfil → IA hay opciones gratis. <button class="btn sm gold" data-act="goKey">Activar IA</button>' : `<b>Aquí no está la IA.</b> En la app de Claude del celular la página no puede usarla. Usa la app instalable, con IA y voz gratis: <a href="${INSTALL_URL}" target="_blank" rel="noopener">${INSTALL_URL.replace('https://', '')}</a>. Mientras tanto usa el cliente entrenado.`} <button class="btn sm" data-act="setup" data-m="entrenado">Usar el cliente entrenado</button></div>` : ''}
   ${body}</div></div>
   <footer class="sfoot"><div class="wrap"><button class="btn gold wide" data-act="startChat"${needAI ? ' disabled' : ''}>Empezar a conversar</button></div></footer>`;
 };
@@ -2212,7 +2381,10 @@ Devuelve SOLO JSON: {"t": "título corto", "ctx": "situación en 1 frase", "line
   testVoice: b => { hush(); if (!canSpeak()) return toast('Aquí la página no puede hablar en voz alta.'); say(b.dataset.role === 'cli' ? 'Me interesa, pero se me hace caro. ¿Qué me puede ofrecer?' : b.dataset.role === 'vend' ? 'Con gusto. ¿Lo dejamos a nombre suyo o al de la empresa?' : 'Hola, campeón. Vamos a practicar cierres de venta.', b.dataset.role, {}, true); },
   saveKey: () => { const v = ($('#keyIn').value || '').trim(); if (!v) return toast('Pega tu clave de API.'); if (!/^sk-ant-/.test(v)) return toast('La clave de Anthropic empieza con «sk-ant-».'); lsSet(KKEY, v); sdkClient = null; toast('Clave guardada en este teléfono.'); refreshStatus(); render(); },
   delKey: () => { lsSet(KKEY, null); sdkClient = null; toast('Clave borrada.'); refreshStatus(); render(); },
-  testAI: async () => { toast('Probando la conexión…'); try { const t = await aiStream('Responde con una sola palabra.', [{ role: 'user', content: 'Di: listo' }], { maxTokens: 300 }); toast('Conexión correcta: «' + cleanAI(t).slice(0, 40) + '»'); } catch (e) { toast(errMsg(e.code, e.message)); } },
+  saveGem: () => { const v = ($('#gemIn').value || '').trim().replace(/\s+/g, ''); if (!v) return toast('Pega tu clave de Gemini.'); if (/^sk-/.test(v)) return toast('Esa parece una clave de otra empresa. La de Gemini la sacas en aistudio.google.com.'); if (v.length < 20) return toast('La clave parece incompleta. Cópiala otra vez.'); lsSet(GKEY, v); gemList = null; toast('Clave de Gemini guardada. Probando…'); refreshStatus(); render(); ACT.testAI({ dataset: { p: 'gemini' } }); },
+  delGem: () => { lsSet(GKEY, null); gemList = null; toast('Clave de Gemini borrada.'); refreshStatus(); render(); },
+  gemTier: b => { S.gemTier = b.dataset.v; save(); render(); },
+  testAI: async b => { toast('Probando la conexión…'); try { const t = await aiStream('Responde en español con una frase corta.', [{ role: 'user', content: 'Saluda y di que estás listo para practicar ventas.' }], { maxTokens: 300, kind: (b && b.dataset && b.dataset.p) || undefined }); toast('Funciona: «' + cleanAI(t).slice(0, 70) + '»'); } catch (e) { toast(errMsg(e.code, e.message)); } },
   perms: async () => { try { await caps.perm.manage(); } catch (e) { toast('Abre el menú de Permisos de esta página y permite que use Claude.'); } aiOff = false; refreshStatus(); },
   copyLink: () => copy(APP_URL, 'Enlace copiado.'),
   install: async () => { if (!installEvt) return; installEvt.prompt(); try { await installEvt.userChoice; } catch (e) {} installEvt = null; render(); },

@@ -27,17 +27,23 @@ La IA enseña y vende con los métodos de Alex Dey y Brian Tracy, pero no es nin
 
 | | En claude.ai (`dojo.html`) | App instalable (`index.html`) |
 | --- | --- | --- |
-| IA | Tu cuenta de Claude, sin clave. Funciona en el navegador; la app de Claude del celular no se la permite a las páginas | Tu clave de API de Anthropic, guardada sólo en el teléfono |
+| IA | Tu cuenta de Claude, sin clave. Funciona en el navegador; la app de Claude del celular no se la permite a las páginas | Gratis sin clave (Pollinations), gratis con tu clave de Gemini (Google AI Studio) o tu clave de Claude (de pago) |
 | Voz y micrófono | Navegador de escritorio | Chrome en Android; Safari en iPhone (la voz sí, el micrófono depende de la versión) |
 | Manos libres | No | Sí: escucha sola cuando la IA termina de hablar |
 | Sin internet | No | Sí, todo menos la IA |
 | Progreso | Se sincroniza con tu cuenta | Se guarda en el teléfono; usa Respaldo para pasarlo a otro |
 
-### Publicar la app instalable
-1. Haz público este repositorio, o usa un plan de GitHub que permita Pages en repositorios privados.
-2. Settings → Pages → Deploy from a branch → elige la rama y la carpeta raíz.
-3. Abre la dirección que te da GitHub en Chrome del celular → menú ⋮ → «Instalar app».
-4. En la app: Perfil → IA → pega tu clave de API (console.anthropic.com → API Keys).
+### La app instalable
+
+Está publicada en **https://sr011224.github.io/desktop-tutorial/** (GitHub Pages, rama `gh-pages`).
+
+1. Ábrela en Chrome (Android) o Safari (iPhone) → menú ⋮ → «Instalar app» / Compartir → «Agregar a pantalla de inicio».
+2. La IA funciona de una vez, gratis y sin clave. Para que sea más rápida y estable: Perfil → IA → «Sacar mi clave gratis» (aistudio.google.com/apikey), crea la clave de Gemini y pégala.
+3. Las voces son las del teléfono. Para voces más naturales, instala las voces mejoradas en español (instrucciones en Perfil → Voz).
+
+Orden de uso de la IA: Claude (si pusiste clave) → Gemini → IA gratis sin clave. Si se acaba el cupo diario de Gemini, la app sigue sola con la IA gratis.
+
+Para actualizar la página publicada: `node build.mjs` y copia `index.html`, `sw.js`, `manifest.webmanifest` y los íconos a la rama `gh-pages`.
 
 ## Estructura
 
