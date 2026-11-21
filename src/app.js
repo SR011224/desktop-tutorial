@@ -12,6 +12,10 @@ const IN_CLAUDE = !!(window.claude && typeof window.claude.use === 'function');
 const HAS_SDK = !!(window.AnthropicSDK && window.AnthropicSDK.default);
 const APP_URL = 'https://claude.ai/artifact/XZ3gxaQNyCu471ffoSP9MU';
 const INSTALL_URL = 'https://sr011224.github.io/desktop-tutorial/';
+const APP_VERSION = '2026.11.21-c';
+const IOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const lastErrs = [];
+window.addEventListener('error', e => { lastErrs.push(String(e.message || e).slice(0, 140)); if (lastErrs.length > 5) lastErrs.shift(); });
 const MODELS = [['claude-opus-5-5', 'Claude Opus 5.5 (recomendado)'], ['claude-sonnet-5-5', 'Claude Sonnet 5.5'], ['claude-haiku-5-5', 'Claude Haiku 5.5 (el más económico)']];
 
 const $ = (s, r = document) => r.querySelector(s);
@@ -29,7 +33,7 @@ const fecha = t => { try { return new Date(t).toLocaleDateString('es', { day: 'n
 
 /* ───────── estado y guardado ───────── */
 const KEY = 'cierres.v2', KKEY = 'cierres.apikey';
-const DEF = () => ({ rev: 0, prod: '', me: '', estilo: 'dey', unlockAll: false, modDone: {}, lesDone: {}, demoSeen: {}, chats: [], nums: {}, voz: { on: true, rate: 1, pick: {} }, pausa: true, manos: true, model: 'claude-opus-5-5', gratis: true, gemTier: 'lite', cfg: {} });
+const DEF = () => ({ rev: 0, prod: '', me: '', estilo: 'dey', unlockAll: false, modDone: {}, lesDone: {}, demoSeen: {}, chats: [], nums: {}, voz: { on: true, rate: 1, pick: {}, motor: 'auto' }, pausa: true, manos: true, model: 'claude-opus-5-5', gratis: true, gemTier: 'lite', puterOn: false, cfg: {} });
 function load() {
   try {
     const raw = lsGet(KEY);
@@ -89,6 +93,8 @@ const capP = (async () => {
     const [s, t, d, p] = await Promise.all(['sample', 'tts', 'dictation', 'permissions'].map(n => c.use(n).catch(() => null)));
     Object.assign(caps, { sample: s, tts: t, dict: d, perm: p });
   }
+  await checkLocal();
+  if (HAS_SDK && S.puterOn) loadPuter().catch(() => {});
   caps.ready = true;
   if (caps.dict) wireDict();
   refreshStatus();
@@ -97,15 +103,17 @@ const GKEY = 'cierres.gemkey';
 const apiKey = () => (lsGet(KKEY) || '').trim();
 const gemKey = () => (lsGet(GKEY) || '').trim();
 /* La app instalada puede usar: tu clave de Claude (de pago), tu clave gratis de Gemini o la IA gratis sin clave. */
-const aiKind = () => (caps.sample && !aiOff) ? 'claude' : !HAS_SDK ? null : apiKey() ? 'api' : gemKey() ? 'gemini' : S.gratis !== false ? 'gratis' : null;
-const canSpeak = () => !!(caps.tts && !ttsOff) || !!SYN;
+const aiKind = () => (caps.sample && !aiOff) ? 'claude' : !HAS_SDK ? null : apiKey() ? 'api' : gemKey() ? 'gemini' : S.puterOn ? 'puter' : localAvail === 'available' ? 'local' : S.gratis !== false ? 'gratis' : null;
+const canSpeak = () => !!(caps.tts && !ttsOff) || !!SYN || useNatural();
 const canMic = () => !micOff && (!!caps.dict || !!WebRec);
 function aiStatus() {
   const k = aiKind();
   if (k === 'claude') return { on: true, t: 'IA activa con tu cuenta de Claude' };
   if (k === 'api') return { on: true, t: 'IA activa con tu clave · ' + ((MODELS.find(m => m[0] === S.model) || MODELS[0])[1]).replace(/ \(.*\)/, '') };
   if (k === 'gemini') return { on: true, t: 'IA activa con Gemini de Google (gratis)' };
-  if (k === 'gratis') return { on: true, t: 'IA incluida y activa (gratis)' };
+  if (k === 'puter') return { on: true, t: 'IA y voz natural activas (Puter, gratis)' };
+  if (k === 'local') return { on: true, t: 'IA del computador activa (gratis, sin internet)' };
+  if (k === 'gratis') return { on: true, t: 'IA gratis sin registro (puede fallar)' };
   if (!caps.ready) return { on: false, t: 'Conectando…' };
   if (HAS_SDK) return { on: false, t: 'Activa la IA en Perfil para conversar (hay opciones gratis)' };
   if (IN_CLAUDE && aiOff) return { on: false, t: 'La IA está desactivada para esta página' };
@@ -115,7 +123,8 @@ function aiStatus() {
 /* ───────── voz que habla (cola por frases) ───────── */
 let synthVoices = [];
 function loadVoices() { if (!SYN) return; try { synthVoices = SYN.getVoices().filter(v => /^es/i.test(v.lang)); } catch (e) {} }
-if (SYN) { loadVoices(); try { SYN.addEventListener('voiceschanged', () => { loadVoices(); if (curView === 'perfil' && !stack.length) render(); }); } catch (e) {} }
+let voicesChecked = !SYN;
+if (SYN) { loadVoices(); setTimeout(() => { loadVoices(); voicesChecked = true; }, 1800); try { SYN.addEventListener('voiceschanged', () => { loadVoices(); if (curView === 'perfil' && !stack.length) render(); }); } catch (e) {} }
 const rankV = v => { const l = v.lang.toLowerCase().replace('_', '-'); return (l === 'es-mx' ? 0 : l === 'es-us' ? 1 : /es-(419|co|ar|cl|pe|ve)/.test(l) ? 2 : l === 'es-es' ? 3 : 4) + (/premium|enhanced|mejorada|natural|neural/i.test(v.name) ? -2.5 : /google|online/i.test(v.name) ? -0.5 : 0); };
 function synthVoice(role) {
   const want = S.voz.pick[role];
@@ -131,10 +140,10 @@ function voiceParams(role, ctx) {
   return { tts: e.voz, rate: e.rate, pitch: e.pitch };
 }
 let spGen = 0, spQ = [], spRun = false, spIdle = [];
-function chunks(text) {
+function chunks(text, max = 210) {
   const parts = String(text).replace(/\s+/g, ' ').match(/[^.!?…]+[.!?…]+["»”)]*\s*|[^.!?…]+$/g) || [];
   const out = []; let cur = '';
-  for (const p of parts) { if ((cur + p).length > 210 && cur) { out.push(cur.trim()); cur = p; } else cur += p; }
+  for (let p of parts) { while (p.length > max) { const cut = p.lastIndexOf(' ', max) > 40 ? p.lastIndexOf(' ', max) : max; if (cur.trim()) { out.push(cur.trim()); cur = ''; } out.push(p.slice(0, cut).trim()); p = p.slice(cut); } if ((cur + p).length > max && cur) { out.push(cur.trim()); cur = p; } else cur += p; }
   if (cur.trim()) out.push(cur.trim());
   return out;
 }
@@ -142,7 +151,7 @@ function say(text, role, ctx, force) {
   if (!text || (!S.voz.on && !force) || !canSpeak()) return;
   const g = spGen;
   if (caps.tts && !ttsOff) spQ.push({ t: String(text).slice(0, 1900), role, ctx, g });
-  else chunks(text).forEach(t => spQ.push({ t, role, ctx, g }));
+  else chunks(text, useNatural() ? 600 : 210).forEach(t => spQ.push({ t, role, ctx, g }));
   pump();
 }
 async function pump() {
@@ -153,28 +162,63 @@ async function pump() {
   const f = spIdle; spIdle = []; f.forEach(x => x());
 }
 const whenQuiet = () => new Promise(r => (spRun || spQ.length) ? spIdle.push(r) : r());
-function hush() { spGen++; spQ = []; try { if (caps.tts) caps.tts.stop().catch(() => {}); if (SYN) SYN.cancel(); } catch (e) {} }
+function hush() { spGen++; spQ = []; lastCancel = Date.now(); try { if (caps.tts) caps.tts.stop().catch(() => {}); if (SYN) SYN.cancel(); if (audioEl) audioEl.pause(); } catch (e) {} const e = curEnd; curEnd = null; if (e) e(); }
+/* Motor de voz: la voz del teléfono (incluida, gratis) o la voz natural de Puter si la activaste. */
+let audioEl = null, devFailN = 0, devOK = false, lastCancel = 0, curEnd = null;
+const motor = () => (S.voz && S.voz.motor) || 'auto';
+const useNatural = () => HAS_SDK && S.puterOn && motor() !== 'tel' && navigator.onLine !== false && natFailN < 3;
 function speakOne(it) {
   const p = voiceParams(it.role, it.ctx), rate = S.voz.rate || 1;
   return new Promise(done => {
     let fin = false, tm = 0;
-    const end = () => { if (!fin) { fin = true; clearTimeout(tm); done(); } };
-    tm = setTimeout(end, 4000 + it.t.length * 110 / rate);
+    const end = () => { if (!fin) { fin = true; clearTimeout(tm); if (curEnd === end) curEnd = null; done(); } };
+    curEnd = end;
+    tm = setTimeout(end, 10000 + it.t.length * 120 / rate);
+    if (it.g !== spGen) return end();
     if (caps.tts && !ttsOff) {
       caps.tts.speak(it.t, { voice: p.tts, language: 'es', rate: Math.max(0.7, Math.min(1.5, rate * p.rate)) }).then(end, e => { if (e && (e.code === 'not_granted' || e.code === 'unavailable')) ttsOff = true; end(); });
       return;
     }
+    if (useNatural()) natSpeak(it, rate, end, () => devSpeak(it, p, rate, end, end));
+    else devSpeak(it, p, rate, end, end);
+  });
+}
+function devSpeak(it, p, rate, end, fail) {
+  if (!SYN) return fail();
+  const go = () => {
+    if (it.g !== spGen) return end();
+    let started = false, over = false;
+    const once = f => () => { if (over) return; over = true; f(); };
+    const ok = once(end), no = once(() => { devFailN++; try { SYN.cancel(); } catch (e) {} if (devFailN === 1 && !devOK) toast('La voz del teléfono no arrancó. Sube el volumen multimedia y revisa Perfil → «Revisar IA y voz».'); fail(); });
     try {
       const u = new SpeechSynthesisUtterance(it.t); const v = synthVoice(it.role);
       u.lang = v ? v.lang : 'es-MX'; if (v) u.voice = v;
-      u.rate = Math.max(0.6, Math.min(1.6, rate * p.rate)); u.pitch = p.pitch;
-      u.onend = end; u.onerror = end; SYN.speak(u);
-    } catch (e) { end(); }
-  });
+      u.rate = Math.max(0.6, Math.min(1.6, rate * p.rate)); u.pitch = p.pitch; u.volume = 1;
+      u.onstart = () => { started = true; devOK = true; devFailN = 0; };
+      u.onend = ok;
+      u.onerror = ev => { const er = ev && ev.error; if (er === 'interrupted' || er === 'canceled') return ok(); if (!started) no(); else ok(); };
+      try { if (SYN.paused) SYN.resume(); } catch (e) {}
+      SYN.speak(u);
+      setTimeout(() => { if (!started && !over && it.g === spGen) no(); }, devOK ? 6000 : 3500);
+    } catch (e) { no(); }
+  };
+  const gap = 180 - (Date.now() - lastCancel);
+  if (gap > 0) setTimeout(go, gap); else go();
+}
+function silentWav() {
+  const n = 800, buf = new ArrayBuffer(44 + n * 2), v = new DataView(buf);
+  const w = (o, t) => { for (let i = 0; i < t.length; i++) v.setUint8(o + i, t.charCodeAt(i)); };
+  w(0, 'RIFF'); v.setUint32(4, 36 + n * 2, true); w(8, 'WAVE'); w(12, 'fmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+  v.setUint32(24, 8000, true); v.setUint32(28, 16000, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true); w(36, 'data'); v.setUint32(40, n * 2, true);
+  return URL.createObjectURL(new Blob([buf], { type: 'audio/wav' }));
 }
 function setSpeaking(v) { document.body.toggleAttribute('data-speaking', v); }
 let primed = false;
-document.addEventListener('pointerdown', () => { if (primed || !SYN || caps.tts) return; primed = true; try { const u = new SpeechSynthesisUtterance(' '); u.volume = 0; SYN.speak(u); } catch (e) {} }, { capture: true });
+document.addEventListener('pointerdown', () => {
+  if (primed || caps.tts) return; primed = true;
+  if (HAS_SDK && S.puterOn) { try { const a = new Audio(silentWav()); const pr = a.play(); if (pr && pr.catch) pr.catch(() => {}); } catch (e) {} }
+  if (IOS && SYN) { try { const u = new SpeechSynthesisUtterance('.'); u.volume = 0; SYN.speak(u); } catch (e) {} }
+}, { capture: true });
 
 /* ───────── micrófono ───────── */
 let listening = false, micCb = null, micBox = null, silT = 0, rec = null;
@@ -326,7 +370,7 @@ async function gemStream(system, turns, { onText, signal, maxTokens }) {
 /* IA gratis incluida, sin clave ni registro. Tres caminos públicos; si uno falla, pasa al siguiente:
    1) Pollinations (POST)  2) LLM7  3) Pollinations (GET, más corto, para cuando lo demás falla). */
 const POLL = 'https://text.pollinations.ai/', L7 = 'https://api.llm7.io/v1/';
-let freeLast = 0, freeModel = true, l7Model = 'default', freeBest = 0;
+let freeLast = 0, freeModel = 'openai-fast', l7Model = 'default', freeBest = 0;
 const freeClean = t => String(t).replace(/<think>[\s\S]*?(<\/think>|$)/gi, '').replace(/\n\s*-{3,}[\s\S]*$/, '').split('\n').filter(l => !/pollinations|llm7|sponsor|patrocinad|🌸/i.test(l)).join('\n');
 async function readOpenAI(r, onText) {
   let acc = '';
@@ -353,9 +397,9 @@ async function pollStream(system, turns, { onText, signal }) {
     const wait = freeLast + 2500 - Date.now(); if (wait > 0) await sleep(wait, signal);
     freeLast = Date.now();
     const body = { messages, stream: true, private: true, referrer: 'cierres-app' };
-    if (freeModel) body.model = 'openai';
+    if (freeModel) body.model = freeModel;
     const r = await freeFetch(POLL + 'openai', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body), signal });
-    if (r.status === 400 && freeModel) { freeModel = false; continue; }
+    if ((r.status === 400 || r.status === 404) && freeModel) { freeModel = freeModel === 'openai-fast' ? 'openai' : ''; continue; }
     if (r.status === 429 || r.status >= 500) { if (attempt < 1) { await sleep(r.status === 429 ? 6000 : 2500, signal); continue; } throw { code: r.status === 429 ? 'free_busy' : 'free_down' }; }
     if (!r.ok) throw { code: 'free_down' };
     const acc = await readOpenAI(r, onText);
@@ -384,7 +428,7 @@ async function pollGet(system, turns, { onText, signal }) {
   let prompt = lines.join('\n') + '\nTú:';
   while (lines.length > 1 && encodeURIComponent(prompt).length + encodeURIComponent(sys).length > 7000) { lines.shift(); prompt = lines.join('\n') + '\nTú:'; }
   if (encodeURIComponent(prompt).length > 4500) prompt = prompt.slice(-1500);
-  const r = await freeFetch(POLL + encodeURIComponent(prompt) + '?model=openai&private=true&referrer=cierres-app&system=' + encodeURIComponent(sys), { signal });
+  const r = await freeFetch(POLL + encodeURIComponent(prompt) + '?model=openai-fast&private=true&referrer=cierres-app&system=' + encodeURIComponent(sys), { signal });
   if (r.status === 429) throw { code: 'free_busy' };
   if (!r.ok) throw { code: 'free_down' };
   let acc; try { acc = freeClean(await r.text()).trim().replace(/^(Tú|Coach|Vendedor|Cliente)\s*:\s*/i, ''); } catch (e) { throw netErr(e); }
@@ -403,6 +447,70 @@ async function freeStream(system, turns, opts) {
   throw last;
 }
 
+/* IA del computador: Chrome trae un modelo que corre en el propio equipo (sin clave; sin internet después de descargarlo). */
+const LM_OPTS = { expectedInputs: [{ type: 'text', languages: ['es'] }], expectedOutputs: [{ type: 'text', languages: ['es'] }] };
+let localAvail = 'unavailable';
+async function checkLocal() { try { if (HAS_SDK && window.LanguageModel && LanguageModel.availability) localAvail = await LanguageModel.availability(LM_OPTS); } catch (e) { localAvail = 'unavailable'; } }
+const lmMonitor = m => m.addEventListener('downloadprogress', e => toast('Descargando la IA del computador: ' + Math.round((e.loaded || 0) * 100) + '%'));
+async function localStream(system, turns, { onText, signal }) {
+  if (!window.LanguageModel) throw { code: 'local_fail' };
+  const T = mergeTurns(turns);
+  const last = T[T.length - 1].role === 'user' ? T.pop().content : '(Continúa.)';
+  let session;
+  try { session = await LanguageModel.create({ ...LM_OPTS, initialPrompts: [{ role: 'system', content: system.length > 7000 ? system.slice(0, 7000) : system }, ...T], signal, monitor: lmMonitor }); }
+  catch (e) { if (e && e.name === 'AbortError') throw { code: 'cancelled' }; throw { code: e && e.name === 'NotAllowedError' ? 'local_gesture' : 'local_fail', message: e && e.message }; }
+  localAvail = 'available';
+  let acc = '';
+  try {
+    for await (const ch of session.promptStreaming(last, { signal })) { acc = (acc && ch.startsWith(acc)) ? ch : acc + ch; if (onText) onText(acc); }
+  } catch (e) { if (e && e.name === 'AbortError') throw { code: 'cancelled' }; if (!acc) throw { code: 'local_fail', message: e && e.message }; }
+  finally { try { session.destroy(); } catch (e) {} }
+  return acc;
+}
+
+/* Puter: con una cuenta gratis de Puter, la IA conversa y habla con voces naturales en español (cada usuario usa su propio cupo gratis). */
+let puterP = null, natFailN = 0;
+function loadPuter() {
+  if (window.puter && window.puter.ai) return Promise.resolve(window.puter);
+  if (!puterP) puterP = new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = 'https://js.puter.com/v2/'; sc.async = true; sc.onload = () => (window.puter && window.puter.ai) ? ok(window.puter) : (puterP = null, no({ code: 'puter_fail' })); sc.onerror = () => { puterP = null; no({ code: 'offline' }); }; document.head.appendChild(sc); });
+  return puterP;
+}
+const puterText = r => { const m = r && r.message; if (!m) return typeof r === 'string' ? r : String((r && r.text) || ''); return typeof m.content === 'string' ? m.content : Array.isArray(m.content) ? m.content.map(c => (c && c.text) || '').join('') : ''; };
+async function puterStream(system, turns, { onText, signal }) {
+  const P = await loadPuter();
+  const messages = [{ role: 'system', content: system }, ...mergeTurns(turns)];
+  let acc = '';
+  try {
+    const resp = await P.ai.chat(messages, { stream: true });
+    if (resp && typeof resp[Symbol.asyncIterator] === 'function') {
+      for await (const part of resp) { if (signal && signal.aborted) throw { code: 'cancelled' }; const t = part && (typeof part === 'string' ? part : part.text); if (t) { acc += t; if (onText) onText(acc); } }
+    } else { acc = puterText(resp); if (onText) onText(acc); }
+  } catch (e) {
+    if (e && e.code === 'cancelled') throw e;
+    const m = String((e && (e.message || (e.error && e.error.message) || e.error)) || '');
+    if (/insufficient|funds|quota|limit|usage|credit/i.test(m)) throw { code: 'rate_limited', message: m };
+    if (/auth|sign|token|log ?in/i.test(m)) throw { code: 'puter_auth' };
+    throw { code: 'upstream_error', message: m };
+  }
+  if (!acc.trim()) throw { code: 'upstream_error' };
+  return acc;
+}
+const NAT_V = { coach: ['Andres', 'es-MX'], vend: ['Pedro', 'es-US'], cli: ['Lupe', 'es-US'] };
+async function natSpeak(it, rate, end, fail) {
+  try {
+    const P = await loadPuter();
+    if (it.g !== spGen) return end();
+    const [voice, language] = NAT_V[it.role] || NAT_V.coach;
+    const a = await P.ai.txt2speech(it.t, { voice, engine: 'neural', language });
+    if (it.g !== spGen) return end();
+    audioEl = a;
+    try { a.playbackRate = Math.max(0.8, Math.min(1.3, rate)); } catch (e) {}
+    a.onended = () => { natFailN = 0; end(); };
+    a.onerror = () => { natFailN++; fail(); };
+    const pr = a.play(); if (pr && pr.catch) pr.catch(() => { natFailN++; fail(); });
+  } catch (e) { natFailN++; fail(); }
+}
+
 async function aiStream(system, turns, { onText, signal, effort = 'low', tier = 'default', maxTokens = 4000, kind: force } = {}) {
   await capP;
   const kind = force || aiKind();
@@ -411,6 +519,15 @@ async function aiStream(system, turns, { onText, signal, effort = 'low', tier = 
     try { return await gemStream(system, turns, { onText, signal, maxTokens }); }
     catch (e) {
       if (!force && e && (e.code === 'rate_limited' || e.code === 'upstream_error') && S.gratis !== false) { toast(e.code === 'rate_limited' ? 'Se acabó por ahora el cupo gratis de Gemini. Sigo con la IA gratis.' : 'Gemini no respondió. Sigo con la IA gratis.'); return freeStream(system, turns, { onText, signal }); }
+      throw e;
+    }
+  }
+  if (kind === 'puter' || kind === 'local') {
+    try { return await (kind === 'puter' ? puterStream : localStream)(system, turns, { onText, signal, maxTokens }); }
+    catch (e) {
+      if (force || !e || e.code === 'cancelled' || e.code === 'refused') throw e;
+      if (kind === 'puter' && localAvail === 'available') { try { return await localStream(system, turns, { onText, signal }); } catch (e2) {} }
+      if (S.gratis !== false) return freeStream(system, turns, { onText, signal });
       throw e;
     }
   }
@@ -448,7 +565,11 @@ async function aiJSON(prompt, effort = 'medium') { return parseJSON(await aiStre
 const errMsg = (code, msg) => ({
   no_ai: 'La IA no está conectada aquí. Revisa Perfil → IA.',
   free_busy: 'La IA gratis está saturada en este momento. Espera un minuto, o conecta Gemini gratis en Perfil → IA para que sea más estable.',
-  free_down: 'La IA gratis no respondió. Revisa tu internet, o conecta Gemini gratis en Perfil → IA (toma 2 minutos).',
+  free_down: 'La IA gratis sin registro no respondió (a veces la bloquean). Actívala gratis con un toque en Perfil → IA → «Activar IA y voz natural».',
+  local_gesture: 'Ve a Perfil → IA y toca «Preparar la IA del computador».',
+  local_fail: 'La IA del computador no respondió. Intenta otra vez o activa otra opción en Perfil → IA.',
+  puter_auth: 'Tu sesión de Puter se cerró. Vuelve a tocar «Activar IA y voz natural» en Perfil → IA.',
+  puter_fail: 'No se pudo cargar Puter. Revisa tu internet e intenta otra vez.',
   cancelled: 'Cancelado.',
   bad_key: 'Tu clave de API no funciona. Revísala en Perfil → IA.',
   bad_model: 'Ese modelo no está disponible para tu clave. Cambia el modelo en Perfil → IA.',
@@ -590,7 +711,7 @@ const MODES = {
 };
 function aiBanner() {
   const st = aiStatus();
-  if (st.on) return `<p class="status on">${esc(st.t)}</p>${aiKind() === 'gratis' ? '<p class="small muted">Opcional: si algún día responde lento, puedes conectar Gemini gratis. <button class="link" data-act="goKey">Ver cómo</button></p>' : ''}`;
+  if (st.on) return `<p class="status on">${esc(st.t)}</p>${aiKind() === 'gratis' ? '<div class="notice"><b>Para que la IA responda siempre y hable con voz natural, actívala gratis con un toque.</b> <button class="btn sm gold" data-act="goKey">Activar IA y voz</button></div>' : ''}`;
   if (!caps.ready) return `<p class="status">${esc(st.t)}</p>`;
   if (HAS_SDK) return `<div class="notice"><b>Activa la IA para conversar.</b> Hay dos opciones gratis: la IA sin clave o Gemini con tu cuenta de Google. <button class="btn sm gold" data-act="goKey">Activar IA</button></div>`;
   return `<div class="notice"><b>${esc(st.t)}.</b> Pasa en la app de Claude del celular: ahí la página no puede usar la IA ni el micrófono. Usa la app instalable, que trae IA y voz gratis: <a href="${INSTALL_URL}" target="_blank" rel="noopener">${INSTALL_URL.replace('https://', '')}</a>. Mientras tanto, practica con el cliente entrenado.${IN_CLAUDE && aiOff && caps.perm ? ' <button class="btn sm" data-act="perms">Revisar permisos</button>' : ''}</div>`;
@@ -602,7 +723,7 @@ function chatRow(c, del) {
 function vHablar() {
   return `<div class="wrap">
   <section class="hero"><p class="eyebrow">Sala de práctica</p><h1>Habla con tu IA de ventas</h1><p class="lead muted">Con tu voz o escribiendo, como en una llamada. Practica vendiendo, escucha cómo vende un experto o pregúntale a tu coach.</p>${aiBanner()}
-  ${aiKind() ? `<div class="quick"><button class="btn gold wide big" data-act="quickTalk">${IC.mic} Hablar ahora con mi coach</button><button class="btn wide" data-act="testVoice" data-role="coach">${IC.speaker} Probar la voz</button></div><p class="small muted">La IA y la voz ya vienen incluidas: no tienes que instalar nada. La primera vez, el teléfono te pide permiso para el micrófono: toca «Permitir».</p>` : ''}</section>
+  ${aiKind() ? `<div class="quick"><button class="btn gold wide big" data-act="quickTalk">${IC.mic} Hablar ahora con mi coach</button><button class="btn wide" data-act="testVoice" data-role="coach">${IC.speaker} Probar la voz</button></div><p class="small muted">La voz viene incluida: es la de tu teléfono, o la voz natural si activas Puter. La primera vez, el teléfono te pide permiso para el micrófono: toca «Permitir». Si no oyes nada, sube el volumen multimedia.</p>` : ''}</section>
   <div class="modes">${Object.entries(MODES).map(([k, m]) => `<button class="mode${m.ai ? '' : ' alt'}" data-act="setup" data-m="${k}"><span class="mi">${IC[m.ic]}</span><span class="mt"><b>${m.t}</b><small>${m.d}</small></span><span class="tags">${m.ai ? '<i>IA</i>' : ''}<i>Voz</i><i>Texto</i></span></button>`).join('')}</div>
   ${S.chats.length ? `<section class="block"><div class="bhead"><h2>Tus sesiones</h2><button class="link" data-act="go" data-v="perfil">Ver todas</button></div><ul class="crows">${S.chats.slice(0, 4).map(c => chatRow(c)).join('')}</ul></section>` : ''}
   </div>`;
@@ -649,6 +770,7 @@ function vBiblio() {
 let quiz = {}, resetAsk = false, restoreOpen = false, installEvt = null;
 window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; if (curView === 'perfil' && !stack.length) render(); });
 function vPerfil() {
+  if (HAS_SDK && !S.puterOn && navigator.onLine !== false) setTimeout(() => loadPuter().catch(() => {}), 0); /* así el botón Activar abre Puter al instante */
   const voices = synthVoices.slice().sort((a, b) => rankV(a) - rankV(b));
   const vsel = (role, label) => `<label class="field"><span class="eyebrow">${label}</span><span class="row nowrap"><select class="inp" data-change="voice" data-role="${role}"><option value="">Automática</option>${voices.map(v => `<option value="${esc(v.voiceURI)}"${S.voz.pick[role] === v.voiceURI ? ' selected' : ''}>${esc(v.name)} · ${esc(v.lang)}</option>`).join('')}</select><button class="btn sm" data-act="testVoice" data-role="${role}">Probar</button></span></label>`;
   const tk = dayKey(), n = S.nums[tk] || { p: 0, r: 0, c: 0 };
@@ -674,15 +796,26 @@ function vPerfil() {
 
   <section class="block" id="ia"><h2>IA</h2>
     <p class="status${st.on ? ' on' : ''}">${esc(st.t)}</p>
-    ${HAS_SDK ? `<p class="small muted">Elige cómo conversa la app. Las dos primeras opciones son gratis. Si tienes varias, usa la mejor: Claude, luego Gemini, luego la IA sin clave.</p>
+    ${HAS_SDK ? `<p class="small muted">Elige cómo conversa la app. Si activas varias, usa la mejor: Claude, Gemini, Puter, la IA del computador y, al final, la IA sin registro.</p>
     <div class="prov">
-      <h3>1. IA gratis incluida <span class="tags"><i>Ya activa</i></span></h3>
-      <p class="small muted">Viene incluida: funciona apenas abres la app, sin clave ni registro. Usa servicios públicos gratis (Pollinations y LLM7) y si uno falla pasa solo al otro. Cuando hay mucha gente puede tardar unos segundos. No escribas datos personales.</p>
+      <h3>IA y voz natural · gratis, con un toque <span class="tags"><i>${S.puterOn ? 'Activa' : 'Recomendado'}</i></span></h3>
+      <p class="small muted">${S.puterOn ? 'Lista: la IA conversa contigo y te habla con voces naturales en español.' : 'Toca «Activar», crea tu cuenta gratis de Puter (o entra con Google) y listo: la IA conversa contigo y te habla con voces naturales en español. Lo haces una sola vez.'}</p>
+      ${S.puterOn ? '<div class="row"><button class="btn sm" data-act="testAI" data-p="puter">Probar conexión</button><button class="btn sm" data-act="testNat">Probar voz natural</button><button class="btn sm" data-act="puterOff">Desactivar</button></div>' : '<button class="btn gold" data-act="puterOn">Activar IA y voz natural</button>'}
+      <p class="small muted">Puter es un servicio externo: cada persona usa su propio cupo gratis. No escribas datos personales.</p>
+    </div>
+    ${localAvail !== 'unavailable' ? `<div class="prov">
+      <h3>IA del computador (Chrome) <span class="tags"><i>${localAvail === 'available' ? 'Lista' : 'Gratis'}</i></span></h3>
+      <p class="small muted">Chrome trae una IA que corre en tu propio computador: gratis, sin clave y sin internet una vez descargada.${localAvail === 'available' ? ' Ya está lista.' : ' La primera vez se descarga (puede tardar varios minutos).'}</p>
+      ${localAvail === 'available' ? '<button class="btn sm" data-act="testAI" data-p="local">Probar conexión</button>' : '<button class="btn gold" data-act="localGet">Preparar la IA del computador</button>'}
+    </div>` : ''}
+    <div class="prov">
+      <h3>IA gratis sin registro</h3>
+      <p class="small muted">Se intenta sola cuando no tienes otra opción activa. Usa servicios públicos (Pollinations y LLM7) que a veces se saturan o bloquean las páginas, así que puede fallar. No escribas datos personales.</p>
       <div class="chips"><button class="chip" data-act="tog" data-k="gratis" aria-pressed="${S.gratis !== false}">Usar la IA gratis sin clave</button></div>
       ${aiKind() === 'gratis' ? '<div class="row"><button class="btn sm" data-act="testAI" data-p="gratis">Probar conexión</button></div>' : ''}
     </div>
     <div class="prov">
-      <h3>2. Gemini de Google · gratis con tu cuenta <span class="tags"><i>Opcional</i></span></h3>
+      <h3>Gemini de Google · gratis con tu cuenta <span class="tags"><i>Opcional</i></span></h3>
       <p class="small muted">No es necesario. Sólo si quieres que responda más rápido y estable. Google da un cupo diario gratis; si se acaba, la app sigue con la IA sin clave.</p>
       <ol class="steps small"><li>Toca «Sacar mi clave gratis» y entra con tu cuenta de Google.</li><li>Toca «Create API key» (Crear clave de API) y luego «Copy» (Copiar).</li><li>Vuelve aquí, pégala abajo y toca Guardar.</li></ol>
       <a class="btn sm gold" href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Sacar mi clave gratis</a>
@@ -691,7 +824,7 @@ function vPerfil() {
       <div class="field"><span class="eyebrow">Modelo de Gemini</span><div class="chips"><button class="chip" data-act="gemTier" data-v="lite" aria-pressed="${S.gemTier !== 'full'}">Rápido · más conversaciones al día</button><button class="chip" data-act="gemTier" data-v="full" aria-pressed="${S.gemTier === 'full'}">Más listo · pocas al día</button></div></div>` : ''}
       <p class="small muted">En el plan gratis, Google puede usar lo que escribes para mejorar sus productos. La clave se guarda sólo en este teléfono y no va en tus respaldos.</p>
     </div>
-    <details class="acc"${apiKey() ? ' open' : ''}><summary><span><b>3. Claude de Anthropic</b><small>De pago: la mejor calidad para enseñar y vender</small></span></summary><div class="in">
+    <details class="acc"${apiKey() ? ' open' : ''}><summary><span><b>Claude de Anthropic</b><small>De pago: la mejor calidad para enseñar y vender</small></span></summary><div class="in">
       <p class="small muted">Crea la clave en console.anthropic.com → API Keys (necesitas cargar saldo). Se guarda sólo en este teléfono.</p>
       <label class="field"><span class="eyebrow">Clave de API de Anthropic</span><span class="row nowrap"><input class="inp" id="keyIn" type="password" value="" placeholder="${apiKey() ? 'Clave guardada · pega otra para cambiarla' : 'sk-ant-…'}" autocomplete="off"><button class="btn sm gold" data-act="saveKey">Guardar</button></span></label>
       ${apiKey() ? '<div class="row"><button class="btn sm" data-act="testAI" data-p="api">Probar conexión</button><button class="btn sm" data-act="delKey">Borrar clave</button></div>' : ''}
@@ -703,9 +836,17 @@ function vPerfil() {
   <section class="block"><h2>Voz</h2>
     <div class="chips"><button class="chip" data-act="tog" data-k="voz.on" aria-pressed="${S.voz.on}">La IA me habla en voz alta</button><button class="chip" data-act="tog" data-k="pausa" aria-pressed="${S.pausa}">Enviar cuando hago una pausa</button>${WebRec && !caps.dict ? `<button class="chip" data-act="tog" data-k="manos" aria-pressed="${S.manos}">Manos libres: escuchar cuando la IA termina</button>` : ''}</div>
     <label class="field"><span class="eyebrow">Velocidad de la voz · ${(S.voz.rate || 1).toFixed(2)}×</span><input type="range" min="0.75" max="1.35" step="0.05" value="${S.voz.rate || 1}" data-change="rate"></label>
+    ${HAS_SDK && S.puterOn ? `<div class="field"><span class="eyebrow">Voz</span><div class="chips">${[['auto', 'Voz natural (Puter)'], ['tel', 'Voz del teléfono']].map(([v, t]) => `<button class="chip" data-act="motor" data-v="${v}" aria-pressed="${motor() === v}">${t}</button>`).join('')}</div></div>` : ''}
     ${caps.tts && !ttsOff ? '<p class="small muted">Usando las voces de Claude.</p>' : SYN ? (voices.length ? vsel('coach', 'Voz del coach y del narrador') + vsel('vend', 'Voz del vendedor') + vsel('cli', 'Voz del cliente') : '<p class="small muted">Tu dispositivo no tiene voces en español instaladas. En Android: Ajustes → Texto a voz → instala «Español». En iPhone: Ajustes → Accesibilidad → Contenido leído → Voces.</p><button class="btn sm" data-act="testVoice" data-role="coach">Probar voz</button>') : '<p class="small muted">Aquí la página no puede hablar en voz alta (pasa en la app de Claude de Android). Lee las respuestas o usa la app instalada.</p>'}
     ${SYN && !(caps.tts && !ttsOff) ? '<details class="acc"><summary><span><b>¿La voz suena robótica?</b><small>Instala voces naturales gratis en tu teléfono</small></span></summary><div class="in"><p class="small"><b>Android:</b> Ajustes → Accesibilidad (o Sistema → Idioma) → Salida de texto a voz → Motor de Google → ⚙ → Instalar datos de voz → Español (Estados Unidos o México) → descarga y elige una voz. Luego cierra y abre Cierres.</p><p class="small"><b>iPhone:</b> Ajustes → Accesibilidad → Contenido leído → Voces → Español → descarga «Paulina (mejorada)» o «Mónica (mejorada)». Luego elígela arriba.</p><p class="small muted">Las voces marcadas como mejorada, premium o natural se eligen solas cuando las tienes.</p></div></details>' : ''}
     <p class="small muted">${canMic() ? 'Micrófono disponible: toca el botón dorado para hablar.' : 'Aquí la página no puede usar el micrófono: toca el micrófono de tu teclado y dicta.'}</p>
+  </section>
+
+  <section class="block" id="diag"><h2>¿Algo no funciona?</h2>
+    <p class="muted">Revisa la IA, la voz y el micrófono en un paso. Si algo sale mal, toma una captura de pantalla del resultado.</p>
+    <button class="btn gold" data-act="diag">Revisar IA y voz</button>
+    <div id="diagOut"></div>
+    <p class="small muted">Versión ${APP_VERSION}</p>
   </section>
 
   <section class="block"><h2>Tus sesiones guardadas</h2>
@@ -1296,6 +1437,42 @@ Devuelve SOLO JSON: {"t": "título corto", "ctx": "situación en 1 frase", "line
   saveGem: () => { const v = ($('#gemIn').value || '').trim().replace(/\s+/g, ''); if (!v) return toast('Pega tu clave de Gemini.'); if (/^sk-/.test(v)) return toast('Esa parece una clave de otra empresa. La de Gemini la sacas en aistudio.google.com.'); if (v.length < 20) return toast('La clave parece incompleta. Cópiala otra vez.'); lsSet(GKEY, v); gemList = null; toast('Clave de Gemini guardada. Probando…'); refreshStatus(); render(); ACT.testAI({ dataset: { p: 'gemini' } }); },
   delGem: () => { lsSet(GKEY, null); gemList = null; toast('Clave de Gemini borrada.'); refreshStatus(); render(); },
   gemTier: b => { S.gemTier = b.dataset.v; save(); render(); },
+  motor: b => { S.voz.motor = b.dataset.v; save(); hush(); render(); say('Así sueno con este motor de voz.', 'coach', {}, true); },
+  diag: async () => {
+    const out = $('#diagOut'); if (!out) return;
+    const rows = [];
+    const put = (k, v, ok) => { rows.push(`<li><span>${ok === true ? '✅' : ok === false ? '❌' : '•'}</span><span><b>${esc(k)}:</b> ${esc(v)}</span></li>`); out.innerHTML = `<ul class="diag">${rows.join('')}</ul>`; };
+    put('Versión', APP_VERSION);
+    put('Internet', navigator.onLine === false ? 'sin conexión' : 'conectado', navigator.onLine !== false);
+    put('IA', 'probando…');
+    const t0 = Date.now();
+    try { const t = await aiStream('Responde en español con una frase corta.', [{ role: 'user', content: 'Di que la IA funciona y que estás lista para practicar ventas.' }], { maxTokens: 300 }); rows.pop(); put('IA · ' + aiStatus().t, '«' + cleanAI(t).slice(0, 80) + '» (' + ((Date.now() - t0) / 1000).toFixed(1) + ' s)', true); }
+    catch (e) { rows.pop(); put('IA', errMsg(e.code, e.message), false); }
+    put('Voces del teléfono en español', SYN ? (synthVoices.length ? synthVoices.length + ' · ' + synthVoices.slice(0, 2).map(v => v.name).join(', ') : 'ninguna') : 'no disponibles', SYN ? synthVoices.length > 0 : undefined);
+    put('Voz que se usa', (caps.tts && !ttsOff) ? 'voces de Claude' : useNatural() ? 'voz natural (Puter)' : 'voz del teléfono');
+    put('IA del computador (Chrome)', localAvail === 'available' ? 'lista' : localAvail === 'downloadable' || localAvail === 'downloading' ? 'disponible para descargar en Perfil → IA' : 'no disponible en este navegador o equipo', localAvail === 'available' ? true : undefined);
+    put('Micrófono', canMic() ? 'disponible' : 'este navegador no permite dictar: usa Chrome', canMic());
+    try { if (navigator.permissions) { const st = await navigator.permissions.query({ name: 'microphone' }); put('Permiso del micrófono', st.state === 'granted' ? 'permitido' : st.state === 'denied' ? 'bloqueado: actívalo en el candado de la barra de direcciones' : 'se pedirá cuando hables', st.state !== 'denied'); } } catch (e) {}
+    if (lastErrs.length) put('Errores recientes', lastErrs.join(' | '), false);
+    hush(); say('Esta es la prueba de voz. Si me escuchas, todo está bien.', 'coach', {}, true);
+    put('Prueba de voz', 'debe sonar ahora. Si no oyes nada, sube el volumen multimedia (no el del timbre) y quita el modo silencio.');
+  },
+  puterOn: async () => {
+    try {
+      toast('Abriendo Puter…');
+      const P = await loadPuter();
+      if (!P.auth.isSignedIn()) await P.auth.signIn();
+      if (!P.auth.isSignedIn()) throw new Error('no');
+      S.puterOn = true; S.voz.motor = 'auto'; save(); refreshStatus(); render();
+      hush(); say('Hola, campeón. Ya tengo voz natural. Vamos a practicar cierres de venta.', 'coach', {}, true);
+    } catch (e) { toast(e && e.code === 'offline' ? 'No se pudo cargar Puter. Revisa tu internet.' : 'No se completó la activación. Toca otra vez «Activar IA y voz natural».'); }
+  },
+  puterOff: async () => { S.puterOn = false; save(); try { if (window.puter && window.puter.auth) await window.puter.auth.signOut(); } catch (e) {} toast('Puter desactivado.'); refreshStatus(); render(); },
+  testNat: () => { hush(); natFailN = 0; say('Así suena la voz natural. ¿Lo dejamos a nombre suyo o al de la empresa?', 'coach', {}, true); },
+  localGet: async () => {
+    try { toast('Preparando la IA del computador…'); const ss = await LanguageModel.create({ ...LM_OPTS, monitor: lmMonitor }); ss.destroy(); localAvail = 'available'; toast('La IA del computador está lista.'); refreshStatus(); render(); }
+    catch (e) { toast('No se pudo preparar la IA del computador' + (e && e.message ? ': ' + e.message : '.')); }
+  },
   quickTalk: () => { S.voz.on = true; save(); startChat('coach', defCfg('coach')); },
   testAI: async b => { toast('Probando la conexión…'); try { const t = await aiStream('Responde en español con una frase corta.', [{ role: 'user', content: 'Saluda y di que estás listo para practicar ventas.' }], { maxTokens: 300, kind: (b && b.dataset && b.dataset.p) || undefined }); toast('Funciona: «' + cleanAI(t).slice(0, 70) + '»'); } catch (e) { toast(errMsg(e.code, e.message)); } },
   perms: async () => { try { await caps.perm.manage(); } catch (e) { toast('Abre el menú de Permisos de esta página y permite que use Claude.'); } aiOff = false; refreshStatus(); },

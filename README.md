@@ -38,10 +38,15 @@ La IA enseña y vende con los métodos de Alex Dey y Brian Tracy, pero no es nin
 Está publicada en **https://sr011224.github.io/desktop-tutorial/** (GitHub Pages, rama `gh-pages`).
 
 1. Ábrela en Chrome (Android) o Safari (iPhone) → menú ⋮ → «Instalar app» / Compartir → «Agregar a pantalla de inicio».
-2. La IA viene incluida y funciona de una vez, gratis y sin clave (Pollinations y LLM7, con paso automático de uno a otro). Para que sea más rápida y estable: Perfil → IA → «Sacar mi clave gratis» (aistudio.google.com/apikey), crea la clave de Gemini y pégala.
+2. IA gratis, de la más fácil a la más estable:
+   - **Puter** (Perfil → IA → «Activar IA y voz natural»): una cuenta gratis y la IA conversa y habla con voces naturales en español.
+   - **IA del computador**: en Chrome de escritorio reciente, una IA que corre en el equipo, sin clave ni internet después de descargarla.
+   - **Gemini**: clave gratis de aistudio.google.com/apikey.
+   - **Sin registro** (Pollinations y LLM7): se intenta sola, pero esos servicios a veces bloquean las páginas.
+   - En Perfil → «Revisar IA y voz» hay un diagnóstico que prueba la IA, la voz y el micrófono.
 3. Las voces son las del teléfono. Para voces más naturales, instala las voces mejoradas en español (instrucciones en Perfil → Voz).
 
-Orden de uso de la IA: Claude (si pusiste clave) → Gemini → IA gratis sin clave. Si se acaba el cupo diario de Gemini, la app sigue sola con la IA gratis.
+Orden de uso de la IA: Claude → Gemini → Puter → IA del computador → IA sin registro. Si una falla, la app intenta la siguiente.
 
 Para actualizar la página publicada: `node build.mjs` y copia `index.html`, `sw.js`, `manifest.webmanifest` y los íconos a la rama `gh-pages`.
 
