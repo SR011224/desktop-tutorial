@@ -231,6 +231,8 @@ body[data-listening] .mic svg{stroke:#fff}
 .prov h3{margin:0;font-size:1.02rem;display:flex;flex-wrap:wrap;align-items:center;gap:8px}
 .prov .field,.prov .steps{width:100%}
 a.btn{text-decoration:none;color:inherit}
+.quick{display:grid;gap:10px;width:100%;margin-top:6px}
+.btn.big{min-height:60px;font-size:1.08rem}
 
 </style>
 <div class="app" id="app">
@@ -1270,7 +1272,7 @@ function aiStatus() {
   if (k === 'claude') return { on: true, t: 'IA activa con tu cuenta de Claude' };
   if (k === 'api') return { on: true, t: 'IA activa con tu clave · ' + ((MODELS.find(m => m[0] === S.model) || MODELS[0])[1]).replace(/ \(.*\)/, '') };
   if (k === 'gemini') return { on: true, t: 'IA activa con Gemini de Google (gratis)' };
-  if (k === 'gratis') return { on: true, t: 'IA gratis activa, sin clave' };
+  if (k === 'gratis') return { on: true, t: 'IA incluida y activa (gratis)' };
   if (!caps.ready) return { on: false, t: 'Conectando…' };
   if (HAS_SDK) return { on: false, t: 'Activa la IA en Perfil para conversar (hay opciones gratis)' };
   if (IN_CLAUDE && aiOff) return { on: false, t: 'La IA está desactivada para esta página' };
@@ -1488,46 +1490,84 @@ async function gemStream(system, turns, { onText, signal, maxTokens }) {
   throw last;
 }
 
-/* IA gratis sin clave: servicio público de Pollinations (sin registro). Puede ir lento cuando hay mucha gente. */
-const FREE_URL = 'https://text.pollinations.ai/openai';
-let freeLast = 0, freeModel = true;
-const freeClean = t => String(t).replace(/<think>[\s\S]*?(<\/think>|$)/gi, '').replace(/\n\s*-{3,}[\s\S]*$/, '').split('\n').filter(l => !/pollinations|sponsor|patrocinad|🌸/i.test(l)).join('\n');
-async function freeStream(system, turns, { onText, signal }) {
+/* IA gratis incluida, sin clave ni registro. Tres caminos públicos; si uno falla, pasa al siguiente:
+   1) Pollinations (POST)  2) LLM7  3) Pollinations (GET, más corto, para cuando lo demás falla). */
+const POLL = 'https://text.pollinations.ai/', L7 = 'https://api.llm7.io/v1/';
+let freeLast = 0, freeModel = true, l7Model = 'default', freeBest = 0;
+const freeClean = t => String(t).replace(/<think>[\s\S]*?(<\/think>|$)/gi, '').replace(/\n\s*-{3,}[\s\S]*$/, '').split('\n').filter(l => !/pollinations|llm7|sponsor|patrocinad|🌸/i.test(l)).join('\n');
+async function readOpenAI(r, onText) {
+  let acc = '';
+  try {
+    if (/event-stream/i.test(r.headers.get('content-type') || '')) {
+      for await (const d of sseData(r)) {
+        if (d === '[DONE]') break;
+        let j; try { j = JSON.parse(d); } catch (e) { continue; }
+        const c = j.choices && j.choices[0], t = c && ((c.delta && c.delta.content) || (c.message && c.message.content));
+        if (t) { acc += t; if (onText) onText(freeClean(acc)); }
+      }
+    } else {
+      const txt = await r.text();
+      try { const j = JSON.parse(txt); acc = (j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content) || ''; } catch (e) { acc = txt; }
+      if (onText) onText(freeClean(acc));
+    }
+  } catch (e) { throw netErr(e); }
+  return freeClean(acc).trim();
+}
+const freeFetch = async (url, init) => { try { return await fetch(url, init); } catch (e) { const er = netErr(e); throw er.code === 'cancelled' ? er : { code: 'free_down' }; } };
+async function pollStream(system, turns, { onText, signal }) {
   const messages = [{ role: 'system', content: system }, ...mergeTurns(turns)];
-  for (let attempt = 0; attempt < 4; attempt++) {
+  for (let attempt = 0; attempt < 3; attempt++) {
     const wait = freeLast + 2500 - Date.now(); if (wait > 0) await sleep(wait, signal);
     freeLast = Date.now();
     const body = { messages, stream: true, private: true, referrer: 'cierres-app' };
     if (freeModel) body.model = 'openai';
-    let r;
-    try { r = await fetch(FREE_URL, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body), signal }); }
-    catch (e) { const er = netErr(e); if (er.code === 'cancelled') throw er; if (attempt < 2) { await sleep(2500, signal); continue; } throw { code: 'free_down' }; }
+    const r = await freeFetch(POLL + 'openai', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body), signal });
     if (r.status === 400 && freeModel) { freeModel = false; continue; }
-    if (r.status === 429 || r.status >= 500) {
-      if (attempt < 3) { if (attempt === 0) toast('La IA gratis está ocupada. Reintento en unos segundos…'); await sleep(r.status === 429 ? 8000 : 3000, signal); continue; }
-      throw { code: r.status === 429 ? 'free_busy' : 'free_down' };
-    }
+    if (r.status === 429 || r.status >= 500) { if (attempt < 1) { await sleep(r.status === 429 ? 6000 : 2500, signal); continue; } throw { code: r.status === 429 ? 'free_busy' : 'free_down' }; }
     if (!r.ok) throw { code: 'free_down' };
-    let acc = '';
-    try {
-      if (/event-stream/i.test(r.headers.get('content-type') || '')) {
-        for await (const d of sseData(r)) {
-          if (d === '[DONE]') break;
-          let j; try { j = JSON.parse(d); } catch (e) { continue; }
-          const c = j.choices && j.choices[0], t = c && ((c.delta && c.delta.content) || (c.message && c.message.content));
-          if (t) { acc += t; if (onText) onText(freeClean(acc)); }
-        }
-      } else {
-        const txt = await r.text();
-        try { const j = JSON.parse(txt); acc = (j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content) || ''; } catch (e) { acc = txt; }
-        if (onText) onText(freeClean(acc));
-      }
-    } catch (e) { throw netErr(e); }
-    acc = freeClean(acc).trim();
+    const acc = await readOpenAI(r, onText);
     if (acc) return acc;
-    if (attempt < 3) continue;
   }
   throw { code: 'free_down' };
+}
+async function llm7Stream(system, turns, { onText, signal }) {
+  const messages = [{ role: 'system', content: system }, ...mergeTurns(turns)];
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const r = await freeFetch(L7 + 'chat/completions', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ model: l7Model, messages, stream: true, temperature: 0.9 }), signal });
+    if ((r.status === 400 || r.status === 404 || r.status === 422) && attempt === 0) {
+      try { const j = await (await fetch(L7 + 'models', { signal })).json(); const ids = (j.data || j.models || []).map(m => m.id || m.name || m).filter(x => typeof x === 'string'); const nx = ids.find(x => /gpt-oss|gpt|llama|mistral/i.test(x)) || ids[0]; if (nx && nx !== l7Model) { l7Model = nx; continue; } } catch (e) {}
+      throw { code: 'free_down' };
+    }
+    if (r.status === 429) throw { code: 'free_busy' };
+    if (!r.ok) throw { code: 'free_down' };
+    const acc = await readOpenAI(r, onText);
+    if (acc) return acc;
+  }
+  throw { code: 'free_down' };
+}
+async function pollGet(system, turns, { onText, signal }) {
+  const sys = system.length > 2400 ? system.slice(0, 2400) : system;
+  const lines = mergeTurns(turns).map(t => (t.role === 'user' ? 'Usuario: ' : 'Tú: ') + t.content);
+  let prompt = lines.join('\n') + '\nTú:';
+  while (lines.length > 1 && encodeURIComponent(prompt).length + encodeURIComponent(sys).length > 7000) { lines.shift(); prompt = lines.join('\n') + '\nTú:'; }
+  if (encodeURIComponent(prompt).length > 4500) prompt = prompt.slice(-1500);
+  const r = await freeFetch(POLL + encodeURIComponent(prompt) + '?model=openai&private=true&referrer=cierres-app&system=' + encodeURIComponent(sys), { signal });
+  if (r.status === 429) throw { code: 'free_busy' };
+  if (!r.ok) throw { code: 'free_down' };
+  let acc; try { acc = freeClean(await r.text()).trim().replace(/^(Tú|Coach|Vendedor|Cliente)\s*:\s*/i, ''); } catch (e) { throw netErr(e); }
+  if (!acc) throw { code: 'free_down' };
+  if (onText) onText(acc);
+  return acc;
+}
+const FREE = [pollStream, llm7Stream, pollGet];
+async function freeStream(system, turns, opts) {
+  const order = [freeBest, ...FREE.map((_, i) => i).filter(i => i !== freeBest)];
+  let last = { code: 'free_down' };
+  for (const i of order) {
+    try { const t = await FREE[i](system, turns, opts); freeBest = i; return t; }
+    catch (e) { if (e && e.code === 'cancelled') throw e; last = (e && e.code) ? e : { code: 'free_down' }; }
+  }
+  throw last;
 }
 
 async function aiStream(system, turns, { onText, signal, effort = 'low', tier = 'default', maxTokens = 4000, kind: force } = {}) {
@@ -1717,7 +1757,7 @@ const MODES = {
 };
 function aiBanner() {
   const st = aiStatus();
-  if (st.on) return `<p class="status on">${esc(st.t)}</p>${aiKind() === 'gratis' ? '<p class="small muted">¿Responde lento? Conecta Gemini gratis con tu cuenta de Google y va más rápido. <button class="link" data-act="goKey">Cómo hacerlo</button></p>' : ''}`;
+  if (st.on) return `<p class="status on">${esc(st.t)}</p>${aiKind() === 'gratis' ? '<p class="small muted">Opcional: si algún día responde lento, puedes conectar Gemini gratis. <button class="link" data-act="goKey">Ver cómo</button></p>' : ''}`;
   if (!caps.ready) return `<p class="status">${esc(st.t)}</p>`;
   if (HAS_SDK) return `<div class="notice"><b>Activa la IA para conversar.</b> Hay dos opciones gratis: la IA sin clave o Gemini con tu cuenta de Google. <button class="btn sm gold" data-act="goKey">Activar IA</button></div>`;
   return `<div class="notice"><b>${esc(st.t)}.</b> Pasa en la app de Claude del celular: ahí la página no puede usar la IA ni el micrófono. Usa la app instalable, que trae IA y voz gratis: <a href="${INSTALL_URL}" target="_blank" rel="noopener">${INSTALL_URL.replace('https://', '')}</a>. Mientras tanto, practica con el cliente entrenado.${IN_CLAUDE && aiOff && caps.perm ? ' <button class="btn sm" data-act="perms">Revisar permisos</button>' : ''}</div>`;
@@ -1728,7 +1768,8 @@ function chatRow(c, del) {
 }
 function vHablar() {
   return `<div class="wrap">
-  <section class="hero"><p class="eyebrow">Sala de práctica</p><h1>Habla con tu IA de ventas</h1><p class="lead muted">Con tu voz o escribiendo, como en una llamada. Practica vendiendo, escucha cómo vende un experto o pregúntale a tu coach.</p>${aiBanner()}</section>
+  <section class="hero"><p class="eyebrow">Sala de práctica</p><h1>Habla con tu IA de ventas</h1><p class="lead muted">Con tu voz o escribiendo, como en una llamada. Practica vendiendo, escucha cómo vende un experto o pregúntale a tu coach.</p>${aiBanner()}
+  ${aiKind() ? `<div class="quick"><button class="btn gold wide big" data-act="quickTalk">${IC.mic} Hablar ahora con mi coach</button><button class="btn wide" data-act="testVoice" data-role="coach">${IC.speaker} Probar la voz</button></div><p class="small muted">La IA y la voz ya vienen incluidas: no tienes que instalar nada. La primera vez, el teléfono te pide permiso para el micrófono: toca «Permitir».</p>` : ''}</section>
   <div class="modes">${Object.entries(MODES).map(([k, m]) => `<button class="mode${m.ai ? '' : ' alt'}" data-act="setup" data-m="${k}"><span class="mi">${IC[m.ic]}</span><span class="mt"><b>${m.t}</b><small>${m.d}</small></span><span class="tags">${m.ai ? '<i>IA</i>' : ''}<i>Voz</i><i>Texto</i></span></button>`).join('')}</div>
   ${S.chats.length ? `<section class="block"><div class="bhead"><h2>Tus sesiones</h2><button class="link" data-act="go" data-v="perfil">Ver todas</button></div><ul class="crows">${S.chats.slice(0, 4).map(c => chatRow(c)).join('')}</ul></section>` : ''}
   </div>`;
@@ -1802,14 +1843,14 @@ function vPerfil() {
     <p class="status${st.on ? ' on' : ''}">${esc(st.t)}</p>
     ${HAS_SDK ? `<p class="small muted">Elige cómo conversa la app. Las dos primeras opciones son gratis. Si tienes varias, usa la mejor: Claude, luego Gemini, luego la IA sin clave.</p>
     <div class="prov">
-      <h3>1. IA gratis sin clave</h3>
-      <p class="small muted">Funciona apenas abres la app, sin registrarte. Es un servicio público (Pollinations): cuando hay mucha gente puede tardar unos segundos. No escribas datos personales.</p>
+      <h3>1. IA gratis incluida <span class="tags"><i>Ya activa</i></span></h3>
+      <p class="small muted">Viene incluida: funciona apenas abres la app, sin clave ni registro. Usa servicios públicos gratis (Pollinations y LLM7) y si uno falla pasa solo al otro. Cuando hay mucha gente puede tardar unos segundos. No escribas datos personales.</p>
       <div class="chips"><button class="chip" data-act="tog" data-k="gratis" aria-pressed="${S.gratis !== false}">Usar la IA gratis sin clave</button></div>
       ${aiKind() === 'gratis' ? '<div class="row"><button class="btn sm" data-act="testAI" data-p="gratis">Probar conexión</button></div>' : ''}
     </div>
     <div class="prov">
-      <h3>2. Gemini de Google · gratis con tu cuenta <span class="tags"><i>Recomendado</i></span></h3>
-      <p class="small muted">Más rápida y estable. Google da un cupo diario gratis; si se acaba, la app sigue con la IA sin clave.</p>
+      <h3>2. Gemini de Google · gratis con tu cuenta <span class="tags"><i>Opcional</i></span></h3>
+      <p class="small muted">No es necesario. Sólo si quieres que responda más rápido y estable. Google da un cupo diario gratis; si se acaba, la app sigue con la IA sin clave.</p>
       <ol class="steps small"><li>Toca «Sacar mi clave gratis» y entra con tu cuenta de Google.</li><li>Toca «Create API key» (Crear clave de API) y luego «Copy» (Copiar).</li><li>Vuelve aquí, pégala abajo y toca Guardar.</li></ol>
       <a class="btn sm gold" href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Sacar mi clave gratis</a>
       <label class="field"><span class="eyebrow">Clave de Gemini</span><span class="row nowrap"><input class="inp" id="gemIn" type="password" value="" placeholder="${gemKey() ? 'Clave guardada · pega otra para cambiarla' : 'AIza…'}" autocomplete="off"><button class="btn sm gold" data-act="saveGem">Guardar</button></span></label>
@@ -2422,6 +2463,7 @@ Devuelve SOLO JSON: {"t": "título corto", "ctx": "situación en 1 frase", "line
   saveGem: () => { const v = ($('#gemIn').value || '').trim().replace(/\s+/g, ''); if (!v) return toast('Pega tu clave de Gemini.'); if (/^sk-/.test(v)) return toast('Esa parece una clave de otra empresa. La de Gemini la sacas en aistudio.google.com.'); if (v.length < 20) return toast('La clave parece incompleta. Cópiala otra vez.'); lsSet(GKEY, v); gemList = null; toast('Clave de Gemini guardada. Probando…'); refreshStatus(); render(); ACT.testAI({ dataset: { p: 'gemini' } }); },
   delGem: () => { lsSet(GKEY, null); gemList = null; toast('Clave de Gemini borrada.'); refreshStatus(); render(); },
   gemTier: b => { S.gemTier = b.dataset.v; save(); render(); },
+  quickTalk: () => { S.voz.on = true; save(); startChat('coach', defCfg('coach')); },
   testAI: async b => { toast('Probando la conexión…'); try { const t = await aiStream('Responde en español con una frase corta.', [{ role: 'user', content: 'Saluda y di que estás listo para practicar ventas.' }], { maxTokens: 300, kind: (b && b.dataset && b.dataset.p) || undefined }); toast('Funciona: «' + cleanAI(t).slice(0, 70) + '»'); } catch (e) { toast(errMsg(e.code, e.message)); } },
   perms: async () => { try { await caps.perm.manage(); } catch (e) { toast('Abre el menú de Permisos de esta página y permite que use Claude.'); } aiOff = false; refreshStatus(); },
   copyLink: () => copy(APP_URL, 'Enlace copiado.'),
